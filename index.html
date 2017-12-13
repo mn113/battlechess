@@ -14,7 +14,7 @@
 			display: grid;
 			background: #999;
 			background: url(img/grass.gif),
-						linear-gradient(225deg, rgba(0,128,0,1) 0%, rgba(0,255,162,1) 100%);
+						linear-gradient(135deg, rgba(0,128,0,1) 0%, rgba(0,255,162,1) 100%);
 			background-blend-mode: multiply;
 			grid-template-columns: repeat(11, 50px);
 			grid-template-rows: repeat(11, 50px);
@@ -22,7 +22,7 @@
 			width: 570px;
 			height: 570px;
 			position: relative;
-			transform: rotateX(60deg) rotateZ(-45deg);
+			transform: rotateX(60deg) rotateZ(45deg);
 		}
 		#ga::before {
 			content: '';
@@ -30,10 +30,10 @@
 			width: 30px;
 			height: 570px;
 			position: absolute;
-			top: 0;
-			left: -30px;
+			bottom: -30px;
+			right: -30px;
 			background: #333;
-			transform: translateY(15px) skewY(-45deg);
+			transform: translateY(-15px) skewY(45deg);
 		}
 		#ga::after {
 			content: '';
@@ -44,7 +44,7 @@
 			bottom: -30px;
 			left: 0;
 			background: #666;
-			transform: translateX(-15px) skewX(-45deg);
+			transform: translateX(15px) skewX(45deg);
 		}
 		#ga > div {
 			background: rgba(255,255,255,0.3);
@@ -55,17 +55,20 @@
 		#ga > div:hover {
 			background: rgba(255,255,240,0.6);
 		}
+		#x0y0 {
+			background: blue !important;
+		}
 		i,b {
 			display: block;
 			width: 32px;
 			height: 32px;
 			font-style: normal;
 			transform-origin: center bottom;
-			transform: rotateZ(45deg) rotateY(60deg) translateY(20%) scale(4);
+			transform: rotateZ(-45deg) rotateY(60deg) translateX(50%) translateY(25%) scale(4);
 			image-rendering: pixelated;
 		}
 		b {
-			transform: rotateZ(45deg) rotateY(60deg) scale(5) translateX(3px) translateY(11px);
+			transform: rotateZ(-45deg) rotateY(60deg) scale(5) translateX(13px) translateY(11px);
 			filter: hue-rotate(30deg);
 		}
 		i:hover,
@@ -91,7 +94,7 @@
 		}
 		.priest {
 			background: url(img/priests.gif) no-repeat;
-			width: 32px;
+			width: 24px;
 			height: 32px;
 		}
 		.golem {
@@ -101,7 +104,7 @@
 		}
 		.queen {
 			background: url(img/lords.gif) no-repeat;
-			width: 24px;
+			width: 32px;
 			height: 32px;
 		}
 		.king {
@@ -113,33 +116,23 @@
 		.ne {}
 		.ee { background-position: 0 66.7%; }
 		.se {}
-		.ss { background-position: 0 0; }
+		.ss { background-position: 0 0; }		/* default */
 		.sw {}
-		.ww { background-position: 0 66.7%; }	/* flipX */
+		.ww { background-position: 0 66.7%; }	/* flipX transform - how? */
 		.nw {}
 	</style>
 </head>
 <body>
 	<div id="ga">
-		<div><i class="mine ss"></i></div>
-		<div><i class="goblin ss"></i></div>
-		<div><i class="fireskull ss"></i></div>
-		<div><i class="priest ss"></i></div>
-		<div><i class="golem ss"></i></div>
-		<div><i class="queen ss"></i></div>
-		<div><i class="king ss"></i></div>
-		<div></div>
-		<div></div>
-		<div></div>
-		<div></div>
 	</div>
 	<script language="javascript">
 		Array.prototype.random = function() {
 			return this[Math.floor(Math.random() * this.length)];
 		};
 		// Aliases
-		const QS = document.querySelector;
-		const CE = document.createElement;
+		var d = document;
+		d.e = d.createElement;
+		d.q = d.querySelector;
 
 		// Unicode icons:
 		const PIECES = ["🤖","👻","😈","👹","🦄","🐲","🐍","💣","🕸️","🏂"];
@@ -149,15 +142,16 @@
 
 		var $ga = document.querySelector("#ga");
 		// Build board:
-		for (var y=1; y<11; y++) {
+		for (var y=0; y<11; y++) {
 			for (var x=0; x<11; x++) {
 				var div = document.createElement("div");
 				var canv = document.createElement('canvas');
 				canv.width = 32;
 				canv.height = 32;
-				if (Math.random() > 0.85) div.innerHTML = `<b>${TERR.random()}</b>`;
+				if (x !== y && Math.random() > 0.85) div.innerHTML = `<b>${TERR.random()}</b>`;
 				$ga.appendChild(div);
-				div.setAttribute("id", x+"x"+y+"y");
+				div.setAttribute("id", "x"+x+"y"+y);
+				div.style.zIndex = x + y;	// (0,0) will be furthest away square
 				//var ctx = canv.getContext('2d');
 				//ctx.font = '32px serif';
 				//ctx.fillText(WEAP[0], 10, 50);
@@ -165,18 +159,37 @@
 			}
 		}
 
+		function piece(className, team=0) {
+			return d.e('i').addClass(className);
+		}
+
+		function placeAt(x, y, type, team) {
+			d.q("#x"+x+"y"+y).appendChild(piece(type, team));
+		}
+
+		placeAt(0,0,'mine');
+		placeAt(3,3,'king');
+		placeAt(4,4,'queen');
+		placeAt(5,5,'gunner');
+		placeAt(6,6,'priest');
+		placeAt(7,7,'goblin');
+		placeAt(8,8,'fireskull');
+
 	</script>
 </body>
 <html>
 <!--
 TODO
-z-indexing
-placeAt
 x & y animation
 jumping animation
-explosions -> animate filter: blur(px)
-facing direction change
-hue change
-health overlay
-cursors
+explosions -> animate filter: blur(px) scale?
+attacking effect/frame
+hue change team 2
+randomise cell colour
+tool: facing direction change
+tool: spawn from toolbox
+tool: orders 1,2,3
+ui: health overlays
+ui: cursors
+
 -->
