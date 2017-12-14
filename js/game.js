@@ -33,8 +33,6 @@ const PLANTS = ["🎄","🌲","🌳","🌵"];
 //const FX = ["💥","🔥"];
 //const DIRS = ["⬆️","↗️","➡️","↘️","⬇️","↙️","⬅️","↖️"];
 
-const colours = ["#6B8E23","#7B8E23","#5B8E33","#6B7E13", "rgba(130,180,110,0.7)", "rgba(150,180,110,0.7)", "rgba(130,160,110,0.7)"];
-
 // Text
 const TEXT = {
 	"mine": "Mine. If armed, will detonate when anything steps on it.",
@@ -45,6 +43,10 @@ const TEXT = {
 	"necro": "Necromancer. Unlimited movement in 8 directions. Will only kill one enemy per turn.",
 	"iceman": "Ice Man. Heavily armoured, he can move or attack 1 square in 8 directions."
 };
+
+const colours = ["#6B8E23","#7B8E23","#5B8E33","#6B7E13", "rgba(130,180,110,0.7)", "rgba(150,180,110,0.7)", "rgba(130,160,110,0.7)"];
+
+const baseSquad = "mine,mine,iceman,necro,golem,golem,priest,priest,goblin,goblin,goblin,goblin,fireskull,fireskull".split(",");
 
 var cells = [];
 var units = [];
@@ -66,16 +68,19 @@ function endTurn() {
 const unwrap = (id) => id.slice(1).split("y").map(n => +n);
 
 class Unit {
-	constructor(type, x=null, y=null, team=0) {
+	constructor(type, team=0, x=null, y=null) {
 		this.type = type;
 		this.id = type + guid++;
+		this.team = team;
+		this.facing = (team == 1) ? 'nn' : 'ss';
+		this.x = x;
+		this.y = y;
+		// DOM element:
 		this.el = d.e('i');
 		this.el.setAttribute("id", this.id);
 		this.el.classList.add(type);
-		this.team = team;
-		this.facing = 'ss';
-		this.x = x;
-		this.y = y;
+		this.el.classList.add('team'+team);
+		this.el.classList.add(this.facing);
 		// Register:
 		units.push(this);
 		depots[this.team].push(this);
@@ -207,19 +212,19 @@ class UI {
 	static drawTools() {
 		// Count units not on the board:
 		var depotCounts = [
-			2 - d.qa("#ga .mine").length,	// TODO: account for team classes
-			4 - d.qa("#ga .goblin").length,
-			2 - d.qa("#ga .fireskull").length,
-			2 - d.qa("#ga .priest").length,
-			2 - d.qa("#ga .golem").length,
-			1 - d.qa("#ga .necro").length,
-			1 - d.qa("#ga .iceman").length
+			2 - d.qa("#ga .mine.team0").length,
+			4 - d.qa("#ga .goblin.team0").length,
+			2 - d.qa("#ga .fireskull.team0").length,
+			2 - d.qa("#ga .priest.team0").length,
+			2 - d.qa("#ga .golem.team0").length,
+			1 - d.qa("#ga .necro.team0").length,
+			1 - d.qa("#ga .iceman.team0").length
 		];
 		// Write the numbers in:
 		d.qa("#tools li").forEach((li, i) => {
 			var n = depotCounts[i];
 			li.lastChild.innerHTML = n;
-			if (n === 0) li.classList.add('disabled');
+			if (n < 1) li.classList.add('disabled');
 		});
 	}
 
@@ -246,12 +251,32 @@ class UI {
 
 }
 
+class AI {
+	constructor() {
+		for (var t of baseSquad) {
+			new Unit(t,1);
+		}
+		return this;
+	}
+	placeUnits() {
+		var spawns = d.qa(".team1spawn");
+		units.filter(u => u.team == 1).forEach(u => {
+			// Place randomly in spawn area;
+			u.placeAt(unwrap(Array.from(spawns.values()).random().id));	// TODO avoid occupied spawnPts
+		});
+	}
+}
+
 // Create everything:
 Board.build(11);
-for (var x of "mine,mine,iceman,necro,golem,golem,priest,priest,goblin,goblin,goblin,goblin,fireskull,fireskull".split(",")) {
-	new Unit(x);
+for (var t of baseSquad) {
+	new Unit(t,0);
 }
 UI.drawTools();
+
+// AI:
+var opp = new AI();
+opp.placeUnits();
 
 // Tools behaviours:
 d.qa("#tools i").forEach(el => {
