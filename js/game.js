@@ -4,6 +4,19 @@
 Array.prototype.random = function() {
 	return this[Math.floor(Math.random() * this.length)];
 };
+// helper for enabling IE 8 event bindings
+function addEvent(el, type, handler) {
+	if (el.attachEvent) el.attachEvent('on'+type, handler); else el.addEventListener(type, handler);
+}
+// live binding helper using matchesSelector
+function live(selector, event, callback, context) {
+	addEvent(context || document, event, function(e) {
+		var found, el = e.target || e.srcElement;
+		while (el && el.matches && el !== context && !(found = el.matches(selector))) el = el.parentElement;
+		if (found) callback.call(el, e);
+	});
+}
+
 // Aliases
 var d = document;
 d.e = d.createElement;
@@ -34,6 +47,7 @@ const TEXT = {
 var cells = [];
 var units = [];
 var gameMode = null;
+var selectedUnit = null;
 var guid = 0;
 const colours = ["#6B8E23","#7B8E23","#5B8E33","#6B7E13"];
 
@@ -82,6 +96,8 @@ class Unit {
 
 	placeAt(x,y) {
 		d.q("#x"+x+"y"+y).appendChild(this.el);
+		this.x = x;
+		this.y = y;
 	}
 
 	_addTo(points) {
@@ -106,8 +122,13 @@ class Unit {
 		}
 	}
 
-	moveTo(x,y) {
+	moveTo(point) {
+		var [x,y] = point;
 		// Calculate animation path
+		console.log('moveTo: x',x,'y',y);
+		// TODO
+		this.placeAt(x,y);
+		return this;
 	}
 
 	target(x,y) {
@@ -145,12 +166,12 @@ class Board {
 
 	static highlight(cells) {
 		console.log('hi',cells);
-		cells.forEach(c => d.q("#x"+c[0]+"y"+c[1]).classList.add('light'));
+		cells.forEach(c => d.q("#x"+c[0]+"y"+c[1]).classList.add('valid'));
 	}
 
 	static unHighlight() {
 		console.log('unhi');
-		d.qa("div.light").forEach(el => el.classList.remove('light'));
+		d.qa("div.valid").forEach(el => el.classList.remove('valid'));
 	}
 
 	static build(width, height=width) {
@@ -182,19 +203,19 @@ class Board {
 // Create everything:
 Board.build(11);
 new Unit('mine',0,0);
-new Unit('mine',1,1);
+//new Unit('mine',1,1);
 new Unit('iceman',3,3);
 new Unit('necro',4,4);
 new Unit('golem',4,5);
-new Unit('golem',5,4);
+//new Unit('golem',5,4);
 new Unit('priest',5,6);
-new Unit('priest',6,5);
+//new Unit('priest',6,5);
 new Unit('goblin',5,8);
-new Unit('goblin',6,7);
-new Unit('goblin',7,6);
-new Unit('goblin',8,5);
+//new Unit('goblin',6,7);
+//new Unit('goblin',7,6);
+//new Unit('goblin',8,5);
 new Unit('fireskull',7,8);
-new Unit('fireskull',8,7);
+//new Unit('fireskull',8,7);
 
 // Attach behaviours to units: (COULD BE DONE ON CREATION?)
 d.qa("#ga i").forEach(el => {
@@ -203,6 +224,10 @@ d.qa("#ga i").forEach(el => {
 	// Add interaction behaviours:
 	el.addEventListener('click', () => {
 		if (gameMode == 'rotate') u.rotate();
+		if (gameMode == 'move') {
+			selectedUnit = u;
+			setMode('move-'+u.id);	// causes highlight to remain
+		}
 	});
 	el.addEventListener('mouseover', () => {
 		if (gameMode == 'move') Board.highlight(u.validMoves());
@@ -211,6 +236,14 @@ d.qa("#ga i").forEach(el => {
 		if (gameMode == 'move') Board.unHighlight();	// TODO cache vm
 	});
 });
+
+live('.valid', 'click', (evt) => {
+	console.log(selectedUnit.id, 'directed to', evt.target.id);
+	selectedUnit.moveTo(unwrap(evt.target.id));
+	Board.unHighlight();
+});
+
+const unwrap = (id) => id.slice(1).split("y").map(n => +n);
 
 soundEffect(
     1046.5,           //frequency
