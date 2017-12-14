@@ -1,3 +1,4 @@
+/* global pixCanv, soundEffect */
 /* eslint-env browser */
 /* eslint-disable eqeqeq */
 
@@ -60,6 +61,7 @@ function swapClass(old, nu, el) {
 	el.classList.add(nu);
 }
 
+// eslint-disable-next-line
 function endTurn() {
 	Board.unHighlight();
 	// AI's turn
@@ -136,7 +138,8 @@ class Unit {
 		Board.markCell(x,y, 'targeted');
 	}
 
-	attack(x,y) {
+	attack(point) {
+		var [x,y] = point;	// eslint-disable-line
 		// Animation?
 		// stats battle ATT/DEF
 	}
@@ -323,6 +326,7 @@ live('.team0spawn', 'click', (evt) => {
 	}
 });
 
+d.b.appendChild(pixCanv('The quick, brown fox jumps over a lazy dog. 123:456:7890'));
 
 soundEffect(
     1046.5,           //frequency
