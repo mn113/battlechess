@@ -35,29 +35,7 @@ var cells = [];
 var units = [];
 var gameMode = null;
 var guid = 0;
-
-// Build board:
-for (var y=0; y<11; y++) {
-	for (var x=0; x<11; x++) {
-		var div = document.createElement("div");
-		var canv = document.createElement('canvas');
-		canv.width = 32;
-		canv.height = 32;
-		if (x !== y && Math.random() > 0.85) div.innerHTML = `<b>${PLANTS.random()}</b>`;
-		$ga.appendChild(div);
-		div.setAttribute("id", "x"+x+"y"+y);
-		div.style.zIndex = x + y;	// (0,0) will be furthest away square
-		// Apply random colour change to each cell:
-		var h = 30 - Math.ceil(60 * Math.random());
-		var b = (x+y+100) / 100;
-		div.style.filter = `hue-rotate(${h}deg) brightness(${b})`;	// gets inherited by children
-		//var ctx = canv.getContext('2d');
-		//ctx.font = '32px serif';
-		//ctx.fillText(WEAP[0], 10, 50);
-		//ctx.fillText(PIECES[0], 10, 50);
-		cells.push([x,y]);
-	}
-}
+const colours = ["#6B8E23","#7B8E23","#5B8E33","#6B7E13"];
 
 // Tooltips:
 d.qa("#tools i").forEach(el => {
@@ -81,24 +59,18 @@ function setMode(mode, piece="") {
 	//messaging.clearMessages();
 }
 
-function markCell(x,y,className) {
-	d.q("#x"+x+"y"+y).classList.add(className);
-}
-
-function highlightPath(x1,y1,x2,y2, piece) {
-	// TODO: interpolate the set of cells based on distance and direction:
-	var cells = [];
-
-	if (piece == 'goblin') cells = [[x1,y1],[x2,y2]];
-	if (piece == 'priest') return;
+function swapClass(old, nu, el) {
+	el.classList.remove(old);
+	el.classList.add(nu);
 }
 
 class Unit {
 	constructor(type, x=null, y=null, team=0) {
 		this.type = type;
 		this.id = type + guid++;
-		this.el = d.e('i').addClass(type);
+		this.el = d.e('i');
 		this.el.setAttribute("id", this.id);
+		this.el.classList.add(type);
 		this.facing = 'ss';
 		this.x = x;
 		this.y = y;
@@ -140,7 +112,7 @@ class Unit {
 
 	target(x,y) {
 		this.targeting = [x,y];
-		markCell(x,y, 'targeted');
+		Board.markCell(x,y, 'targeted');
 	}
 
 	attack(x,y) {
@@ -166,11 +138,49 @@ class Unit {
 	}
 }
 
-function swapClass(old, nu, el) {
-	el.classList.remove(old);
-	el.classList.add(nu);
+class Board {
+	static markCell(x,y,className) {
+		d.q("#x"+x+"y"+y).classList.add(className);
+	}
+
+	static highlight(cells) {
+		console.log('hi',cells);
+		cells.forEach(c => d.q("#x"+c[0]+"y"+c[1]).classList.add('light'));
+	}
+
+	static unHighlight() {
+		console.log('unhi');
+		d.qa("div.light").forEach(el => el.classList.remove('light'));
+	}
+
+	static build(width, height=width) {
+		// Build board:
+		for (var y=0; y<height; y++) {
+			for (var x=0; x<width; x++) {
+				var div = document.createElement("div");
+				//var canv = document.createElement('canvas');
+				//canv.width = 32;
+				//canv.height = 32;
+				if (x !== y && Math.random() > 0.85) div.innerHTML = `<b>${PLANTS.random()}</b>`;
+				$ga.appendChild(div);
+				div.setAttribute("id", "x"+x+"y"+y);
+				div.style.zIndex = x + y;	// (0,0) will be furthest away square
+				// Apply random colour change to each cell:
+				//var b = (x+y+100) / 100;
+				//div.style.filter = `brightness(${b})`;	// gets inherited by children
+				div.style.background = colours.random();
+				//var ctx = canv.getContext('2d');
+				//ctx.font = '32px serif';
+				//ctx.fillText(WEAP[0], 10, 50);
+				//ctx.fillText(PIECES[0], 10, 50);
+				cells.push([x,y]);
+			}
+		}
+	}
 }
 
+// Create everything:
+Board.build(11);
 new Unit('mine',0,0);
 new Unit('mine',1,1);
 new Unit('iceman',3,3);
@@ -186,10 +196,34 @@ new Unit('goblin',8,5);
 new Unit('fireskull',7,8);
 new Unit('fireskull',8,7);
 
+// Attach behaviours to units: (COULD BE DONE ON CREATION?)
 d.qa("#ga i").forEach(el => {
+	// Find instance:
+	var u = units.filter(u => u.id == el.id)[0];
+	// Add interaction behaviours:
 	el.addEventListener('click', () => {
-		// Find instance:
-		var u = units.filter(u => u.id == el.id)[0];
 		if (gameMode == 'rotate') u.rotate();
 	});
+	el.addEventListener('mouseover', () => {
+		if (gameMode == 'move') Board.highlight(u.validMoves());
+	});
+	el.addEventListener('mouseout', () => {
+		if (gameMode == 'move') Board.unHighlight();	// TODO cache vm
+	});
 });
+
+soundEffect(
+    1046.5,           //frequency
+    0,                //attack
+    0.3,              //decay
+    "sawtooth",       //waveform
+    0.2,              //Volume
+    -0.8,             //pan
+    0,                //wait before playing
+    1200,             //pitch bend amount
+    false,            //reverse bend
+    0,                //random pitch range
+    25,               //dissonance
+    [0.2, 0.2, 2000], //echo array: [delay, feedback, filter]
+    undefined         //reverb array: [duration, decay, reverse?]
+);

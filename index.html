@@ -3,7 +3,8 @@
 <head>
 	<meta charset="utf-8">
 	<title>20kb.js</title>
-	<script src="js/CSSClass.min.js"></script>
+	<script src="js/sound.min.js"></script>
+	<script src="js/pixelfont.min.js"></script>
 	<style>
 		body {
 			display: flex;
@@ -71,8 +72,6 @@
 			grid-template-columns: repeat(11, 50px);
 			grid-template-rows: repeat(11, 50px);
 			grid-gap: 2px;
-			width: 570px;
-			height: 570px;
 			position: relative;
 			transform: rotateX(60deg) rotateZ(45deg);
 		}
@@ -107,6 +106,9 @@
 		}
 		#ga > div:hover {
 			background: rgba(255,255,240,0.6);
+		}
+		.light {
+			filter: brightness(1.25);
 		}
 		i,b {
 			display: block;
