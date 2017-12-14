@@ -49,7 +49,7 @@ var units = [];
 var gameMode = null;
 var selectedUnit = null;
 var guid = 0;
-const colours = ["#6B8E23","#7B8E23","#5B8E33","#6B7E13"];
+const colours = ["#6B8E23","#7B8E23","#5B8E33","#6B7E13", "rgba(130,180,110,0.7)", "rgba(150,180,110,0.7)", "rgba(130,160,110,0.7)"];
 
 // Tooltips:
 d.qa("#tools i").forEach(el => {
@@ -105,10 +105,12 @@ class Unit {
 	}
 
 	validMoves() {
+		// NOTE: inefficient to calc all these when only 1 or 2 needed
 		var orth4 = this._addTo([[0,1],[1,0],[0,-1],[-1,0]]);
 		var diag4 = this._addTo([[1,1],[-1,-1],[1,-1],[-1,1]]);
 		var doglegs = this._addTo([[2,1],[2,-1],[-2,1],[-2,-1],[1,2],[1,-2],[-1,2],[-1,-2]]);
 		var orthAll = cells.filter(c => c[0] == this.x || c[1] == this.y);
+		var orthAllLtd = orthAll.filter(c => Math.abs(c[0] - this.x) < 4 && Math.abs(c[1] - this.y) < 4);
 		var diagAll = cells.filter(c => Math.abs(c[0] - this.x) == Math.abs(c[1] - this.y));
 
 		switch(this.type) {
@@ -116,7 +118,7 @@ class Unit {
 			case 'goblin': return orth4;
 			case 'fireskull': return doglegs;
 			case 'priest': return diagAll;
-			case 'golem': return orthAll;	// TODO: limit to 4
+			case 'golem': return orthAllLtd;
 			case 'necro': return orthAll.concat(diagAll);
 			case 'iceman': return orth4.concat(diag4);
 		}

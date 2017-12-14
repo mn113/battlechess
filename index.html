@@ -64,14 +64,10 @@
 		}
 		#ga {
 			display: grid;
-			background: #999;
-			background: url(img/grass.gif),
-						linear-gradient(135deg, rgba(0,128,0,1) 0%, rgba(0,255,162,1) 100%);
-			background: #333;
-			background-blend-mode: multiply;
+			background: url(img/grass2.gif);
 			grid-template-columns: repeat(11, 50px);
 			grid-template-rows: repeat(11, 50px);
-			grid-gap: 2px;
+			grid-gap: 0;
 			position: relative;
 			transform: rotateX(60deg) rotateZ(45deg);
 		}
@@ -79,27 +75,27 @@
 			content: '';
 			display: block;
 			width: 30px;
-			height: 570px;
+			height: 100%;
 			position: absolute;
 			bottom: -30px;
 			right: -30px;
-			background: #333;
+			background: #543;
 			transform: translateY(-15px) skewY(45deg);
 		}
 		#ga::after {
 			content: '';
 			display: block;
-			width: 570px;
+			width: 100%;
 			height: 30px;
 			position: absolute;
 			bottom: -30px;
 			left: 0;
-			background: #666;
+			background: #876;
 			transform: translateX(15px) skewX(45deg);
 		}
 		#ga > div {
-			background: rgba(255,255,255,0.3);
 			background: olivedrab;
+			border: 1px solid #222;
 			display: flex;
 			align-items: center;
 			justify-content: center;
@@ -123,6 +119,7 @@
 		b {
 			transform: rotateZ(-45deg) rotateY(60deg) scale(5) translateX(13px) translateY(11px);
 			filter: hue-rotate(30deg);
+			pointer-events: none;
 		}
 		i:hover,
 		div:hover > i{
@@ -216,5 +213,7 @@ tool: orders 1,2,3
 ui: health overlays
 ui: cursors
 ui: toolbox countdown circle
+ui: write in pixelfont?
 anim: skull bob
+sfx: click, move, melee, shoot, explode, spawn
 -->
