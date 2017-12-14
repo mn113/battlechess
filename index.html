@@ -45,6 +45,11 @@
 			bottom: 0;
 			right: 0;
 		}
+		p#toolstip {
+			position: absolute;
+			top: 50px;
+			left: 5px;
+		}
 		#ga {
 			display: grid;
 			background: #999;
@@ -100,6 +105,7 @@
 			transform-origin: center bottom;
 			transform: rotateZ(-45deg) rotateY(60deg) translateX(50%) translateY(25%) scale(4);
 			image-rendering: pixelated;
+			filter: hue-rotate(0);
 		}
 		b {
 			transform: rotateZ(-45deg) rotateY(60deg) scale(5) translateX(13px) translateY(11px);
@@ -154,6 +160,11 @@
 		.sw {}
 		.ww { background-position: 0 66.7%; }	/* flipX transform - how? */
 		.nw {}
+		#credit {
+			position: absolute;
+			bottom: 0;
+			right: 0;
+		}
 	</style>
 </head>
 <body class="">
@@ -165,12 +176,14 @@
 		<li><i class="golem"></i><span>1</span></li>
 		<li><i class="queen disabled"></i><span>0</span></li>
 		<li><i class="king disabled"></i><span>0</span></li>
-		<a>ROT</a>
-		<a>ARM<br>(1,2,3)</a>
-		<a>DONE</a>
+		<a onclick="setMode('rotate')">ROT</a>
+		<a onclick="setMode('arm')">ARM<br>(1,2,3)</a>
+		<a onclick="endTurn()">DONE</a>
 	</ul>
+	<p id="toolstip"></p>
 	<div id="ga">
 	</div>
+	<a href="https://opengameart.org/users/redshrike" id="credit">Sprites by Redshrike</a>
 	<script src="js/game.js"></script>
 </body>
 <html>
