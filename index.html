@@ -41,8 +41,9 @@
 		}
 		.disabled {
 			filter: grayscale();
+			pointer-events: none;
 		}
-		#tools span {
+		#tools data {
 			position: absolute;
 			bottom: 0;
 			right: 0;
@@ -106,6 +107,8 @@
 		.valid {
 			filter: brightness(1.25);
 		}
+		#ga > div.team0spawn { border-color: yellow; }
+		#ga > div.team1spawn { border-color: red; }
 		i,b {
 			display: block;
 			width: 32px;
@@ -167,12 +170,22 @@
 		.ww {
 			background-position: 0 100%;
 			transform: rotateZ(-45deg) rotateY(60deg) translateX(50%) translateY(25%) scaleX(-4) scaleY(4);
-		}	/* flipX transform - how? FIXME */
+		}
 		.nw {}
 		.nn { background-position: 0 50%; }
 		.ne {}
 		.ee { background-position: 0 100%; }
 		.se {}
+
+		.move { cursor: move; }
+		.place-mine,
+		.place-goblin,
+		.place-fireskull,
+		.place-priest,
+		.place-golem,
+		.place-necro,
+		.place-iceman { cursor: copy; }
+
 		#credit {
 			position: absolute;
 			bottom: 0;
@@ -182,13 +195,13 @@
 </head>
 <body class="">
 	<ul id="tools">
-		<li><i class="mine"></i><span>1</span></li>
-		<li><i class="goblin"></i><span>3</span></li>
-		<li><i class="fireskull"></i><span>1</span></li>
-		<li><i class="priest"></i><span>1</span></li>
-		<li><i class="golem"></i><span>1</span></li>
-		<li><i class="necro disabled"></i><span>0</span></li>
-		<li><i class="iceman disabled"></i><span>0</span></li>
+		<li><i class="mine"></i><data></data></li>
+		<li><i class="goblin"></i><data></data></li>
+		<li><i class="fireskull"></i><data></data></li>
+		<li><i class="priest"></i><data></data></li>
+		<li><i class="golem"></i><data></data></li>
+		<li><i class="necro"></i><data></data></li>
+		<li><i class="iceman"></i><data></data></li>
 		<a id="rot" onclick="setMode('rotate')">ROT</a>
 		<a id="mov" onclick="setMode('move')">MOV</a>
 		<a id="arm" onclick="setMode('arm')">ARM<br>(1,2,3)</a>
@@ -196,6 +209,8 @@
 	</ul>
 	<p id="toolstip"></p>
 	<div id="ga">
+	</div>
+	<div id="depot">
 	</div>
 	<a href="https://opengameart.org/users/redshrike" id="credit">Sprites by Redshrike</a>
 	<script src="js/game.js"></script>
@@ -208,10 +223,9 @@ jumping animation
 explosions -> animate filter: blur(px) scale?
 attacking effect/frame
 hue change team 2
-tool: spawn from toolbox
+	tool: spawn from toolbox
 tool: orders 1,2,3
 ui: health overlays
-ui: cursors
 ui: toolbox countdown circle
 ui: write in pixelfont?
 anim: skull bob

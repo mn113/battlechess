@@ -33,6 +33,8 @@ const PLANTS = ["🎄","🌲","🌳","🌵"];
 //const FX = ["💥","🔥"];
 //const DIRS = ["⬆️","↗️","➡️","↘️","⬇️","↙️","⬅️","↖️"];
 
+const colours = ["#6B8E23","#7B8E23","#5B8E33","#6B7E13", "rgba(130,180,110,0.7)", "rgba(150,180,110,0.7)", "rgba(130,160,110,0.7)"];
+
 // Text
 const TEXT = {
 	"mine": "Mine. If armed, will detonate when anything steps on it.",
@@ -48,35 +50,20 @@ var cells = [];
 var units = [];
 var gameMode = null;
 var selectedUnit = null;
+var depots = {0: [], 1: []};
 var guid = 0;
-const colours = ["#6B8E23","#7B8E23","#5B8E33","#6B7E13", "rgba(130,180,110,0.7)", "rgba(150,180,110,0.7)", "rgba(130,160,110,0.7)"];
-
-// Tooltips:
-d.qa("#tools i").forEach(el => {
-	el.addEventListener('mouseover', () => { d.q("#toolstip").innerHTML = TEXT[el.classList[0]]; });
-	el.addEventListener('mouseout', () => { d.q("#toolstip").innerHTML = ""; });
-	el.addEventListener('click', () => { setMode('place', el.classList[0]); });
-});
-
-function setMode(mode, piece="") {
-	while (d.b.c.length > 0) d.b.c.remove(d.b.c[0]);
-	/* Possible modes:
-	place-mine, place-goblin, place-fireskull, place-priest, place-golem, place-necro, place-iceman
-	rotate
-	move
-	arm
-	*/
-	if (mode == 'place') mode += "-"+piece;
-	d.b.c.add(mode);
-	console.log(mode);
-	gameMode = mode;
-	//messaging.clearMessages();
-}
 
 function swapClass(old, nu, el) {
 	el.classList.remove(old);
 	el.classList.add(nu);
 }
+
+function endTurn() {
+	Board.unHighlight();
+	// AI's turn
+}
+
+const unwrap = (id) => id.slice(1).split("y").map(n => +n);
 
 class Unit {
 	constructor(type, x=null, y=null, team=0) {
@@ -85,19 +72,25 @@ class Unit {
 		this.el = d.e('i');
 		this.el.setAttribute("id", this.id);
 		this.el.classList.add(type);
+		this.team = team;
 		this.facing = 'ss';
 		this.x = x;
 		this.y = y;
-		if (x !== null && y !== null) this.placeAt(x,y);
-		this.team = team;
+		// Register:
 		units.push(this);
+		depots[this.team].push(this);
+		// To board:
+		if (x !== null && y !== null) this.placeAt([x,y]);
 		return this;
 	}
 
-	placeAt(x,y) {
+	placeAt(point) {
+		var [x,y] = point;
 		d.q("#x"+x+"y"+y).appendChild(this.el);
 		this.x = x;
 		this.y = y;
+		var t = this.team;
+		depots[t].splice(depots[t].indexOf(this),1);
 	}
 
 	_addTo(points) {
@@ -129,7 +122,7 @@ class Unit {
 		// Calculate animation path
 		console.log('moveTo: x',x,'y',y);
 		// TODO
-		this.placeAt(x,y);
+		this.placeAt([x,y]);
 		return this;
 	}
 
@@ -159,6 +152,11 @@ class Unit {
 		// Play sound
 		// Remove back to depot
 	}
+
+	remove() {
+		d.q('#depot').appendChild(this.el);
+		depots[this.team].push(this);
+	}
 }
 
 class Board {
@@ -181,43 +179,86 @@ class Board {
 		for (var y=0; y<height; y++) {
 			for (var x=0; x<width; x++) {
 				var div = document.createElement("div");
-				//var canv = document.createElement('canvas');
-				//canv.width = 32;
-				//canv.height = 32;
 				if (x !== y && Math.random() > 0.85) div.innerHTML = `<b>${PLANTS.random()}</b>`;
 				$ga.appendChild(div);
 				div.setAttribute("id", "x"+x+"y"+y);
+				if (x < 5 && y < 5) div.classList.add('team0spawn');
+				if (x > width - 6 && y > height - 6) div.classList.add('team1spawn');
 				div.style.zIndex = x + y;	// (0,0) will be furthest away square
 				// Apply random colour change to each cell:
+				div.style.background = colours.random();
 				//var b = (x+y+100) / 100;
 				//div.style.filter = `brightness(${b})`;	// gets inherited by children
-				div.style.background = colours.random();
+				cells.push([x,y]);
+
+				//var canv = document.createElement('canvas');
+				//canv.width = 32;
+				//canv.height = 32;
 				//var ctx = canv.getContext('2d');
 				//ctx.font = '32px serif';
 				//ctx.fillText(WEAP[0], 10, 50);
 				//ctx.fillText(PIECES[0], 10, 50);
-				cells.push([x,y]);
 			}
 		}
 	}
 }
 
+class UI {
+	static drawTools() {
+		// Count units not on the board:
+		var depotCounts = [
+			2 - d.qa("#ga .mine").length,	// TODO: account for team classes
+			4 - d.qa("#ga .goblin").length,
+			2 - d.qa("#ga .fireskull").length,
+			2 - d.qa("#ga .priest").length,
+			2 - d.qa("#ga .golem").length,
+			1 - d.qa("#ga .necro").length,
+			1 - d.qa("#ga .iceman").length
+		];
+		// Write the numbers in:
+		d.qa("#tools li").forEach((li, i) => {
+			var n = depotCounts[i];
+			li.lastChild.innerHTML = n;
+			if (n === 0) li.classList.add('disabled');
+		});
+	}
+
+	static setMode(mode, piece="") {
+		while (d.b.c.length > 0) d.b.c.remove(d.b.c[0]);
+		if (!mode) return;
+		/* Possible modes:
+		place-[type]
+		rotate
+		move
+		move-[id]
+		arm
+		'' (to clear mode)
+		*/
+		if (mode == 'place') {
+			mode += "-"+piece;
+			selectedUnit = depots[0].filter(u => u.type == piece)[0];
+		}
+		d.b.c.add(mode);
+		console.log(mode);
+		gameMode = mode;
+		//messaging.clearMessages();
+	}
+
+}
+
 // Create everything:
 Board.build(11);
-new Unit('mine',0,0);
-//new Unit('mine',1,1);
-new Unit('iceman',3,3);
-new Unit('necro',4,4);
-new Unit('golem',4,5);
-//new Unit('golem',5,4);
-new Unit('priest',5,6);
-//new Unit('priest',6,5);
-new Unit('goblin',5,8);
-//new Unit('goblin',6,7);
-//new Unit('goblin',7,6);
-//new Unit('goblin',8,5);
-new Unit('fireskull',7,8);
-//new Unit('fireskull',8,7);
+for (var x of "mine,mine,iceman,necro,golem,golem,priest,priest,goblin,goblin,goblin,goblin,fireskull,fireskull".split(",")) {
+	new Unit(x);
+}
+UI.drawTools();
+
+// Tools behaviours:
+d.qa("#tools i").forEach(el => {
+	el.addEventListener('mouseover', () => { d.q("#toolstip").innerHTML = TEXT[el.classList[0]]; });
+	el.addEventListener('mouseout', () => { d.q("#toolstip").innerHTML = ""; });
+	el.addEventListener('click', () => { UI.setMode('place', el.classList[0]); });
+});
 
 // Attach behaviours to units: (COULD BE DONE ON CREATION?)
 d.qa("#ga i").forEach(el => {
@@ -228,24 +269,35 @@ d.qa("#ga i").forEach(el => {
 		if (gameMode == 'rotate') u.rotate();
 		if (gameMode == 'move') {
 			selectedUnit = u;
-			setMode('move-'+u.id);	// causes highlight to remain
+			UI.setMode('move-'+u.id);	// causes highlight to remain
 		}
 	});
 	el.addEventListener('mouseover', () => {
 		if (gameMode == 'move') Board.highlight(u.validMoves());
 	});
 	el.addEventListener('mouseout', () => {
-		if (gameMode == 'move') Board.unHighlight();	// TODO cache vm
+		if (gameMode == 'move') Board.unHighlight();	// TODO cache vm for this xy?
 	});
 });
 
+// Behaviours on cells:
 live('.valid', 'click', (evt) => {
 	console.log(selectedUnit.id, 'directed to', evt.target.id);
 	selectedUnit.moveTo(unwrap(evt.target.id));
+	selectedUnit = null;
+	UI.setMode();
 	Board.unHighlight();
 });
+live('.team0spawn', 'click', (evt) => {
+	if (gameMode.startsWith('place-')) {
+		// Check spawn validity:
+		selectedUnit.placeAt(unwrap(evt.target.id));
+		selectedUnit = null;
+		UI.setMode();
+		UI.drawTools();
+	}
+});
 
-const unwrap = (id) => id.slice(1).split("y").map(n => +n);
 
 soundEffect(
     1046.5,           //frequency
