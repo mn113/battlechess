@@ -33,6 +33,7 @@
 			align-items: center;
 			justify-content: center;
 			position: relative;
+			cursor: pointer;
 		}
 		#tools i {
 			transform: none;
@@ -44,6 +45,16 @@
 			position: absolute;
 			bottom: 0;
 			right: 0;
+		}
+		#rot:hover,
+		#mov:hover,
+		#arm:hover,
+		#end:hover,
+		.rotate #rot,
+		.move #mov,
+		.arm #arm {
+			color: yellow;
+			filter: brightness(1.1);
 		}
 		p#toolstip {
 			position: absolute;
@@ -142,24 +153,27 @@
 			width: 32px;
 			height: 32px;
 		}
-		.queen {
+		.necro {
 			background: url(img/lords.gif) no-repeat;
 			width: 32px;
 			height: 32px;
 		}
-		.king {
+		.iceman {
 			background: url(img/blueguys.gif) no-repeat;
 			width: 34px;
 			height: 34px;
 		}
-		.nn { background-position: 0 33.3%; }
-		.ne {}
-		.ee { background-position: 0 66.7%; }
-		.se {}
 		.ss { background-position: 0 0; }		/* default */
 		.sw {}
-		.ww { background-position: 0 66.7%; }	/* flipX transform - how? */
+		.ww {
+			background-position: 0 100%;
+			transform: rotateZ(-45deg) rotateY(60deg) translateX(50%) translateY(25%) scaleX(-4) scaleY(4);
+		}	/* flipX transform - how? FIXME */
 		.nw {}
+		.nn { background-position: 0 50%; }
+		.ne {}
+		.ee { background-position: 0 100%; }
+		.se {}
 		#credit {
 			position: absolute;
 			bottom: 0;
@@ -174,11 +188,12 @@
 		<li><i class="fireskull"></i><span>1</span></li>
 		<li><i class="priest"></i><span>1</span></li>
 		<li><i class="golem"></i><span>1</span></li>
-		<li><i class="queen disabled"></i><span>0</span></li>
-		<li><i class="king disabled"></i><span>0</span></li>
-		<a onclick="setMode('rotate')">ROT</a>
-		<a onclick="setMode('arm')">ARM<br>(1,2,3)</a>
-		<a onclick="endTurn()">DONE</a>
+		<li><i class="necro disabled"></i><span>0</span></li>
+		<li><i class="iceman disabled"></i><span>0</span></li>
+		<a id="rot" onclick="setMode('rotate')">ROT</a>
+		<a id="mov" onclick="setMode('move')">MOV</a>
+		<a id="arm" onclick="setMode('arm')">ARM<br>(1,2,3)</a>
+		<a id="end" onclick="endTurn()">DONE</a>
 	</ul>
 	<p id="toolstip"></p>
 	<div id="ga">
@@ -194,7 +209,6 @@ jumping animation
 explosions -> animate filter: blur(px) scale?
 attacking effect/frame
 hue change team 2
-tool: facing direction change
 tool: spawn from toolbox
 tool: orders 1,2,3
 ui: health overlays
