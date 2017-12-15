@@ -26,6 +26,9 @@
 			display: inline;
 			margin: 0 0.2em 0.4em 0;
 		}
+		#depot {
+			display: none;
+		}
 		#tools {
 			position: absolute;
 			top: 5px;
@@ -144,6 +147,13 @@
 					drop-shadow(1px 1px 0 yellow)
 					drop-shadow(-1px -1px 0 yellow);
 		}
+		i.team1:hover,
+		div:hover > i.team1 {
+			filter: brightness(1.25)
+					drop-shadow(1px 1px 0 yellow)
+					drop-shadow(-1px -1px 0 yellow)
+					hue-rotate(180deg);
+		}
 		.team1 {
 			filter: hue-rotate(180deg);
 		}
@@ -162,7 +172,7 @@
 			background: url(img/hotheads.gif) no-repeat;
 			width: 18px;
 			height: 24px;
-			animation: vertbob 1.5s infinite;
+			xanimation: vertbob 1.5s infinite;
 		}
 		@keyframes vertbob {
 			50% { padding-bottom: 3px; }
@@ -228,6 +238,7 @@
 		<a id="rot" onclick="UI.setMode('rotate')">ROT</a>
 		<a id="mov" onclick="UI.setMode('move')">MOV</a>
 		<a id="arm" onclick="UI.setMode('arm')">ARM<br>(1,2,3)</a>
+		<a id="mov" onclick="UI.setMode('explode')">💣</a>
 		<a id="end" onclick="endTurn()">DONE</a>
 	</ul>
 	<p id="toolstip"></p>
@@ -243,7 +254,6 @@
 TODO
 x & y animation
 jumping animation
-explosions -> animate filter: blur(px) scale?
 attacking effect/frame
 tool: orders 1,2,3
 ui: health overlays

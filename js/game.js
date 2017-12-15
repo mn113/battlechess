@@ -1,4 +1,4 @@
-/* global pixCanv, soundEffect */
+/* global pixCanv, soundEffect, Viper */
 /* eslint-env browser */
 /* eslint-disable eqeqeq */
 
@@ -157,8 +157,20 @@ class Unit {
 
 	explode() {
 		// Animate blur
+		Viper({
+			object: {b:0},
+			property: 'b',
+			to: 20,
+			duration: 950,
+			transition: Viper.Transitions.sine.out,
+			start: null,
+			update: (o) => {
+				this.el.style.filter = `blur(${o.b}px)`;
+			},
+			finish: () => this.remove()
+		}).start();
 		// Play sound
-		// Remove back to depot
+
 	}
 
 	remove() {
@@ -299,6 +311,7 @@ d.qa("#ga i").forEach(el => {
 			selectedUnit = u;
 			UI.setMode('move-'+u.id);	// causes highlight to remain
 		}
+		if (gameMode == 'explode') u.explode();
 	});
 	el.addEventListener('mouseover', () => {
 		if (gameMode == 'move') Board.highlight(u.validMoves());
