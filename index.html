@@ -4,7 +4,7 @@
 	<meta charset="utf-8">
 	<title>20kb.js</title>
 	<script src="js/viper.min.js"></script>
-	<script src="js/sound.min.js"></script>
+	<script src="js/jsfxr.min.js"></script>
 	<script src="js/pixelfont.min.js"></script>
 	<style>
 		body {
@@ -167,6 +167,7 @@
 			background: url(img/goblins.gif) no-repeat;
 			width: 18px;
 			height: 24px;
+			xanimation: flash 0.5s 5;
 		}
 		.fireskull {
 			background: url(img/hotheads.gif) no-repeat;
@@ -174,13 +175,11 @@
 			height: 24px;
 			xanimation: vertbob 1.5s infinite;
 		}
-		@keyframes vertbob {
-			50% { padding-bottom: 3px; }
-		}
 		.priest {
 			background: url(img/priests.gif) no-repeat;
 			width: 24px;
 			height: 32px;
+			xanimation: jiggle 0.5s 3 alternate;
 		}
 		.golem {
 			background: url(img/golems.gif) no-repeat;
@@ -209,6 +208,20 @@
 		.ee { background-position: 0 100%; }
 		.se {}
 
+		@keyframes vertbob {
+			50% { padding-bottom: 3px; }
+		}
+		@keyframes flash {
+			50% { opacity: 0.5; }
+		}
+		@keyframes jiggle {
+			0% { transform: translate(4px,3px); }
+			17% { transform: translate(1px,4px); }
+			33% { transform: translate(3px,2px); }
+			50% { transform: translate(2px,5px); }
+			67% { transform: translate(4px,1px); }
+			83% { transform: translate(1px,3px); }
+		}
 
 		.move { cursor: move; }
 		.place-mine,
@@ -223,6 +236,10 @@
 			position: absolute;
 			bottom: 0;
 			right: 0;
+		}
+		#credit,
+		#credit a {
+			color: #ccc;
 		}
 	</style>
 </head>
@@ -246,17 +263,17 @@
 	</div>
 	<div id="depot">
 	</div>
-	<a href="https://opengameart.org/users/redshrike" id="credit">Sprites by Redshrike</a>
+	<p id="credit">Sprites by <a href="https://opengameart.org/users/redshrike">Redshrike</a></p>
 	<script src="js/game.js"></script>
 </body>
 <html>
 <!--
 TODO
-x & y animation
-jumping animation
+anim: slide x & y
+	anim: jiggle, flash, bob
 attacking effect/frame
+particle canvas?
 tool: orders 1,2,3
 ui: health overlays
 ui: toolbox countdown circle
-sfx: click, move, melee, shoot, explode, spawn
 -->

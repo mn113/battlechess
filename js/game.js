@@ -1,6 +1,6 @@
-/* global pixCanv, soundEffect, Viper */
+/* global pixCanv, Viper, jsfxr */
 /* eslint-env browser */
-/* eslint-disable eqeqeq */
+/* eslint-disable eqeqeq, no-sparse-arrays */
 
 Array.prototype.random = function() {
 	return this[Math.floor(Math.random() * this.length)];
@@ -56,6 +56,22 @@ var selectedUnit = null;
 var depots = {0: [], 1: []};
 var guid = 0;
 
+// Sounds
+var sounds = {
+	click: "0,0.0104,0.1249,0.0304,0.1137,0.3656,0.0169,0.2355,-0.0019,0.4281,0.268,-0.0681,0.0301,0.6511,-0.099,,0.0864,0.0735,0.9802,-0.0466,0.0721,0.0457,0.0041,0.5",
+	move: "2,0.26,0.69,0.1216,0.39,0.31,,-0.0999,0.0099,0.79,0.3,-0.949,-0.6922,0.5664,0.23,0.6269,-0.2367,0.2199,0.9831,0.7356,0.3795,0.0111,,0.5",
+	slash: "1,,0.0648,,0.2896,0.5191,,-0.3743,,,,,,,,,,,1,,,0.0127,,0.5",
+	shoot: "",
+	explode: "3,,0.3155,0.7105,0.4263,0.1789,,-0.2795,,,,,,,,,0.1895,-0.0232,1,,,,,0.5",
+	spawn: "1,0.074,0.3294,0.1572,0.9079,0.1758,0.0748,-0.0392,0.0793,0.8855,,0.7141,,-0.7982,1,,-0.0311,0.1442,0.6756,-0.1432,0.0236,0.8974,0.8212,0.5",
+
+	play: function(name) {
+		var player = new Audio();
+		player.src = jsfxr(sounds[name].split(",").map(s => parseFloat(s))); // asfxr string must be passed as array
+		player.play();
+	}
+};
+
 function swapClass(old, nu, el) {
 	el.classList.remove(old);
 	el.classList.add(nu);
@@ -83,17 +99,43 @@ class Unit {
 		this.el.classList.add(type);
 		this.el.classList.add('team'+team);
 		this.el.classList.add(this.facing);
+		if (team === 0) this.addEventListeners();
 		// Register:
 		units.push(this);
 		depots[this.team].push(this);
 		// To board:
 		if (x !== null && y !== null) this.placeAt([x,y]);
+		this.vMoves = false;
+
+		return this;
+	}
+
+	addEventListeners() {
+		// Add interaction behaviours:
+		this.el.addEventListener('mouseover', () => {
+			if (gameMode == 'move') {
+				this.vMoves = this.vMoves || this.validMoves();
+				Board.highlight(this.vMoves);
+			}
+		});
+		this.el.addEventListener('click', () => {
+			if (gameMode == 'rotate') this.rotate();
+			if (gameMode == 'move') {
+				selectedUnit = this;
+				UI.setMode('move-'+this.id);	// causes highlight to remain
+			}
+			if (gameMode == 'explode') this.explode();
+		});
+		this.el.addEventListener('mouseout', () => {
+			if (gameMode == 'move') Board.unHighlight();
+		});
 		return this;
 	}
 
 	placeAt(point) {
 		var [x,y] = point;
 		d.q("#x"+x+"y"+y).appendChild(this.el);
+		sounds.play('spawn');
 		this.x = x;
 		this.y = y;
 		var t = this.team;
@@ -130,6 +172,8 @@ class Unit {
 		console.log('moveTo: x',x,'y',y);
 		// TODO
 		this.placeAt([x,y]);
+		this.vMoves = false;
+		sounds.play('move');
 		return this;
 	}
 
@@ -151,6 +195,7 @@ class Unit {
 		var nu = seq[(seq.indexOf(old) + 1) % 4];
 		console.log(nu);
 		swapClass(old, nu, this.el);
+		sounds.play('click');
 		this.facing = nu;
 		return this;
 	}
@@ -163,14 +208,12 @@ class Unit {
 			to: 20,
 			duration: 950,
 			transition: Viper.Transitions.sine.out,
-			start: null,
+			start: () => sounds.play('explode'),
 			update: (o) => {
 				this.el.style.filter = `blur(${o.b}px)`;
 			},
 			finish: () => this.remove()
 		}).start();
-		// Play sound
-
 	}
 
 	remove() {
@@ -300,27 +343,6 @@ d.qa("#tools i").forEach(el => {
 	el.addEventListener('click', () => { UI.setMode('place', el.classList[0]); });
 });
 
-// Attach behaviours to units: (COULD BE DONE ON CREATION?)
-d.qa("#ga i").forEach(el => {
-	// Find instance:
-	var u = units.filter(u => u.id == el.id)[0];
-	// Add interaction behaviours:
-	el.addEventListener('click', () => {
-		if (gameMode == 'rotate') u.rotate();
-		if (gameMode == 'move') {
-			selectedUnit = u;
-			UI.setMode('move-'+u.id);	// causes highlight to remain
-		}
-		if (gameMode == 'explode') u.explode();
-	});
-	el.addEventListener('mouseover', () => {
-		if (gameMode == 'move') Board.highlight(u.validMoves());
-	});
-	el.addEventListener('mouseout', () => {
-		if (gameMode == 'move') Board.unHighlight();	// TODO cache vm for this xy?
-	});
-});
-
 // Behaviours on cells:
 live('.valid', 'click', (evt) => {
 	console.log(selectedUnit.id, 'directed to', evt.target.id);
@@ -339,20 +361,5 @@ live('.team0spawn', 'click', (evt) => {
 	}
 });
 
+// Text
 d.b.appendChild(pixCanv('The quick, brown fox jumps over a lazy dog. 123:456:7890'));
-
-soundEffect(
-    1046.5,           //frequency
-    0,                //attack
-    0.3,              //decay
-    "sawtooth",       //waveform
-    0.2,              //Volume
-    -0.8,             //pan
-    0,                //wait before playing
-    1200,             //pitch bend amount
-    false,            //reverse bend
-    0,                //random pitch range
-    25,               //dissonance
-    [0.2, 0.2, 2000], //echo array: [delay, feedback, filter]
-    undefined         //reverb array: [duration, decay, reverse?]
-);
