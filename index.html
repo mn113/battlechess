@@ -4,6 +4,7 @@
 	<meta charset="utf-8">
 	<title>20kb.js</title>
 	<script src="js/viper.min.js"></script>
+	<script src="js/TinyAnimate.min.js"></script>
 	<script src="js/jsfxr.min.js"></script>
 	<script src="js/pixelfont.min.js"></script>
 	<style>
@@ -110,6 +111,17 @@
 			left: 0;
 			background: #876;
 			transform: translateX(15px) skewX(45deg);
+		}
+		#animLayer {
+			width:100%;
+			height: 100%;
+			position: absolute;
+			border: 2px solid fuchsia;
+			z-index: 100;
+			pointer-events: none;
+		}
+		#animLayer > * {
+			position: absolute;
 		}
 		#ga > div {
 			background: olivedrab;

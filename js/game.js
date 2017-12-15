@@ -1,4 +1,4 @@
-/* global pixCanv, Viper, jsfxr */
+/* global pixCanv, Viper, TinyAnimate, jsfxr */
 /* eslint-env browser */
 /* eslint-disable eqeqeq, no-sparse-arrays */
 
@@ -50,7 +50,10 @@ const TEXT = {
 	"iceman": "Ice Man. Heavily armoured, he can move or attack 1 square in 8 directions."
 };
 
-const colours = ["#6B8E23","#7B8E23","#5B8E33","#6B7E13", "rgba(130,180,110,0.7)", "rgba(150,180,110,0.7)", "rgba(130,160,110,0.7)"];
+const COLOURS = [
+	"#6B8E23","#7B8E23","#5B8E33","#6B7E13",
+	"rgba(130,180,110,0.7)", "rgba(150,180,110,0.7)", "rgba(130,160,110,0.7)"
+];
 
 const baseSquad = "mine,mine,iceman,necro,golem,golem,priest,priest,goblin,goblin,goblin,goblin,fireskull,fireskull".split(",");
 
@@ -169,16 +172,20 @@ class Unit {
 	placeAt(point) {
 		var [x,y] = point;
 		d.q("#x"+x+"y"+y).appendChild(this.el);
+		this.el.style.opacity = 1;
 		sounds.play('spawn');
 		this.x = x;
 		this.y = y;
-		var t = this.team;
-		depots[t].splice(depots[t].indexOf(this),1);
+		depots[this.team].splice(depots[this.team].indexOf(this),1);
+
+		// Done
+		this.vMoves = this._validMoves();
+		return this;
 	}
 
 	// Animate square-by-square towards destination:
 	moveTo(dest) {
-		if (this.type == 'hothead') return this._flyTo(dest);
+		if (this.type == 'fireskull') return this._flyTo(dest);
 		// Calculate animation path, must go square by square:
 		// Interpolate route:
 		var route = Board.findRoute([this.x,this.y], dest);	// BUG
@@ -198,29 +205,45 @@ class Unit {
 	// Chain these to move longer distances
 	_stepTo(dest, cb) {
 		sounds.play('move');
+		//Viper({
+		//}).start();
 		this.placeAt(dest);
 		if (cb) setTimeout(cb, 500);
 	}
 
 	// Animate to destination directly, as the crow flies, ignoring obstacles:
 	_flyTo(dest) {
+		var orientation = ""; // TODO
+
 		// Clone el to dest first:
+		var clone = this.cloneToAnim();
+		// Calclate final x/y:
+		var cx = (this.x + 0.5) * 50,
+			cy = (this.y + 0.5) * 50;	// CELL WIDTH
+		var zx = (dest[0] + 0.5) * 50,
+			zy = (dest[1] + 0.5) * 50;
+		// Then animate 2 transforms:
+		TinyAnimate.animateCSS(
+			clone, 'top', 'px', cy, zy,
+			600, 'linear',
+			// when done:
+			() => {
+				this.placeAt(dest);
+				clone.parentNode.removeChild(clone);
+			}
+		);
+		TinyAnimate.animateCSS(
+			clone, 'left', 'px', cx, zx, 600
+		);
+	}
 
-		// Calclate x/y difference:
-
-		// Then animate a transform:
-		Viper({
-			object: {b:0},
-			property: 'b',
-			to: 50,
-			duration: 1250,
-			transition: Viper.Transitions.sine.out,
-			start: () => sounds.play('move'),
-			update: (o) => {
-				this.el.style.transform = `translate(${o.b}px, ${o.b}px)`;
-			},
-			finish: () => this.placeAt(dest)
-		}).start();
+	cloneToAnim() {
+		var clone = this.el.cloneNode();
+		d.q("#animLayer").appendChild(clone);
+		clone.style.left = (this.x + 0.5) * 50 + "px";
+		clone.style.top = (this.y + 0.5) * 50 + "px";
+		this.el.style.opacity = 0; // hide original
+		return clone;
 	}
 
 	target(x,y) {
@@ -274,7 +297,7 @@ class Board {
 		// Build board:
 		for (var y=0; y<height; y++) {
 			for (var x=0; x<width; x++) {
-				var div = document.createElement("div");
+				var div = d.e("div");
 				if (x !== y && Math.random() > 0.85) div.innerHTML = `<b>${PLANTS.random()}</b>`;
 				$ga.appendChild(div);
 				div.setAttribute("id", "x"+x+"y"+y);
@@ -282,7 +305,7 @@ class Board {
 				if (x > width - 6 && y > height - 6) div.classList.add('team1spawn');
 				div.style.zIndex = x + y;	// (0,0) will be furthest away square
 				// Apply random colour change to each cell:
-				div.style.background = colours.random();
+				div.style.background = COLOURS.random();
 				//var b = (x+y+100) / 100;
 				//div.style.filter = `brightness(${b})`;	// gets inherited by children
 				cells.push([x,y]);
@@ -296,6 +319,10 @@ class Board {
 				//ctx.fillText(PIECES[0], 10, 50);
 			}
 		}
+		// Add anim layer
+		var anim = d.e('aside');
+		anim.setAttribute("id", "animLayer");
+		$ga.appendChild(anim);
 	}
 
 	// Apply a class to a cell:
