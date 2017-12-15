@@ -17,6 +17,11 @@ function live(selector, event, callback, context) {
 		if (found) callback.call(el, e);
 	});
 }
+// naive array comparator:
+function arrEq(a1,a2) {
+    /* WARNING: arrays must not contain {objects} or behavior may be undefined */
+	return JSON.stringify(a1)==JSON.stringify(a2);
+}
 
 // Aliases
 var d = document;
@@ -58,12 +63,12 @@ var guid = 0;
 
 // Sounds
 var sounds = {
-	click: "0,0.0104,0.1249,0.0304,0.1137,0.3656,0.0169,0.2355,-0.0019,0.4281,0.268,-0.0681,0.0301,0.6511,-0.099,,0.0864,0.0735,0.9802,-0.0466,0.0721,0.0457,0.0041,0.5",
+	click: "1,,0.22,0.46,,0.9,0.86,-0.6,-1,-0.6681,,-1,,,-1,,-0.0014,0.1729,0.95,0.8999,,,0.2367,0.5",
 	move: "2,0.26,0.69,0.1216,0.39,0.31,,-0.0999,0.0099,0.79,0.3,-0.949,-0.6922,0.5664,0.23,0.6269,-0.2367,0.2199,0.9831,0.7356,0.3795,0.0111,,0.5",
 	slash: "1,,0.0648,,0.2896,0.5191,,-0.3743,,,,,,,,,,,1,,,0.0127,,0.5",
 	shoot: "",
-	explode: "3,,0.3155,0.7105,0.4263,0.1789,,-0.2795,,,,,,,,,0.1895,-0.0232,1,,,,,0.5",
-	spawn: "1,0.074,0.3294,0.1572,0.9079,0.1758,0.0748,-0.0392,0.0793,0.8855,,0.7141,,-0.7982,1,,-0.0311,0.1442,0.6756,-0.1432,0.0236,0.8974,0.8212,0.5",
+	explode: "3,.07,.43,.29,.48,.179,,-.26,,,,,,,,,.1895,.16,1,,,,,.5",
+	spawn: "0,0.41,0.35,0.26,0.37,0.54,,-0.62,0.3999,,,-0.4885,,0.29,0.0735,0.8163,0.043,,0.9,0.4399,0.39,0.15,0.813,0.5",
 
 	play: function(name) {
 		var player = new Audio();
@@ -99,7 +104,7 @@ class Unit {
 		this.el.classList.add(type);
 		this.el.classList.add('team'+team);
 		this.el.classList.add(this.facing);
-		if (team === 0) this.addEventListeners();
+		if (team === 0) this._addEventListeners();
 		// Register:
 		units.push(this);
 		depots[this.team].push(this);
@@ -110,15 +115,17 @@ class Unit {
 		return this;
 	}
 
-	addEventListeners() {
+	// Wire up the listeners for clicking or hovering this unit:
+	_addEventListeners() {
 		// Add interaction behaviours:
 		this.el.addEventListener('mouseover', () => {
 			if (gameMode == 'move') {
-				this.vMoves = this.vMoves || this.validMoves();
+				this.vMoves = this.vMoves || this._validMoves();
 				Board.highlight(this.vMoves);
 			}
 		});
-		this.el.addEventListener('click', () => {
+		this.el.addEventListener('click', (e) => {
+			e.stopPropagation();
 			if (gameMode == 'rotate') this.rotate();
 			if (gameMode == 'move') {
 				selectedUnit = this;
@@ -132,22 +139,14 @@ class Unit {
 		return this;
 	}
 
-	placeAt(point) {
-		var [x,y] = point;
-		d.q("#x"+x+"y"+y).appendChild(this.el);
-		sounds.play('spawn');
-		this.x = x;
-		this.y = y;
-		var t = this.team;
-		depots[t].splice(depots[t].indexOf(this),1);
-	}
-
+	// Add this unit's [x,y] to each member of an array of points:
 	_addTo(points) {
 		return points.map(p => [this.x+p[0], this.y+p[1]]);
 	}
 
-	validMoves() {
-		// NOTE: inefficient to calc all these when only 1 or 2 needed
+	// Calculate all valid squares this piece can move to from here:
+	_validMoves() {
+		// NOTE: inefficient to calc all these options when only 1 or 2 needed for a given type
 		var orth4 = this._addTo([[0,1],[1,0],[0,-1],[-1,0]]);
 		var diag4 = this._addTo([[1,1],[-1,-1],[1,-1],[-1,1]]);
 		var doglegs = this._addTo([[2,1],[2,-1],[-2,1],[-2,-1],[1,2],[1,-2],[-1,2],[-1,-2]]);
@@ -166,15 +165,62 @@ class Unit {
 		}
 	}
 
-	moveTo(point) {
+	// Put unit in board square:
+	placeAt(point) {
 		var [x,y] = point;
-		// Calculate animation path
-		console.log('moveTo: x',x,'y',y);
-		// TODO
-		this.placeAt([x,y]);
-		this.vMoves = false;
-		sounds.play('move');
+		d.q("#x"+x+"y"+y).appendChild(this.el);
+		sounds.play('spawn');
+		this.x = x;
+		this.y = y;
+		var t = this.team;
+		depots[t].splice(depots[t].indexOf(this),1);
+	}
+
+	// Animate square-by-square towards destination:
+	moveTo(dest) {
+		if (this.type == 'hothead') return this._flyTo(dest);
+		// Calculate animation path, must go square by square:
+		// Interpolate route:
+		var route = Board.findRoute([this.x,this.y], dest);	// BUG
+		console.log(route);
+		// Walk loop:
+		var step = function() {
+			if (route.length > 0) this._stepTo(route.shift(), step);
+		}.bind(this);
+		step();
+
+		// Done
+		this.vMoves = this._validMoves();
 		return this;
+	}
+
+	// Move to an adjacent square:
+	// Chain these to move longer distances
+	_stepTo(dest, cb) {
+		sounds.play('move');
+		this.placeAt(dest);
+		if (cb) setTimeout(cb, 500);
+	}
+
+	// Animate to destination directly, as the crow flies, ignoring obstacles:
+	_flyTo(dest) {
+		// Clone el to dest first:
+
+		// Calclate x/y difference:
+
+		// Then animate a transform:
+		Viper({
+			object: {b:0},
+			property: 'b',
+			to: 50,
+			duration: 1250,
+			transition: Viper.Transitions.sine.out,
+			start: () => sounds.play('move'),
+			update: (o) => {
+				this.el.style.transform = `translate(${o.b}px, ${o.b}px)`;
+			},
+			finish: () => this.placeAt(dest)
+		}).start();
 	}
 
 	target(x,y) {
@@ -223,20 +269,7 @@ class Unit {
 }
 
 class Board {
-	static markCell(x,y,className) {
-		d.q("#x"+x+"y"+y).classList.add(className);
-	}
-
-	static highlight(cells) {
-		console.log('hi',cells);
-		cells.forEach(c => d.q("#x"+c[0]+"y"+c[1]).classList.add('valid'));
-	}
-
-	static unHighlight() {
-		console.log('unhi');
-		d.qa("div.valid").forEach(el => el.classList.remove('valid'));
-	}
-
+	// Create the board HTML element:
 	static build(width, height=width) {
 		// Build board:
 		for (var y=0; y<height; y++) {
@@ -264,6 +297,45 @@ class Board {
 			}
 		}
 	}
+
+	// Apply a class to a cell:
+	static markCell(x,y,className) {
+		d.q("#x"+x+"y"+y).classList.add(className);
+	}
+
+	// TODO: unMarkCells
+
+	// Give a group of squares 'valid' class
+	static highlight(cells) {
+		cells.forEach(c => d.q("#x"+c[0]+"y"+c[1]).classList.add('valid'));
+	}
+
+	// Clear 'valid' classes from squares
+	static unHighlight() {
+		d.qa("div.valid").forEach(el => el.classList.remove('valid'));
+	}
+
+	// Figure out which squares to visit to get from A to B (ortho or diag):
+	static findRoute(a,z) {
+		if (arrEq(a,z)) return [];
+		var route = [];
+
+		var dx = z[0]-a[0],
+			dy = z[1]-a[1];
+		// Normalise:		// [5,-5]	=> [1,-1]
+		if (dx !== 0) dx /= Math.abs(dx);
+		if (dy !== 0) dy /= Math.abs(dy);
+		console.log(dx, dy);	// -1, 0, 1
+		// Increment:
+		while (!arrEq(a,z)) {
+			a[0] += dx;
+			a[1] += dy;
+			route.push(a.slice(0));
+		}
+		return route;
+	}
+
+	// TODO: make non-static class
 }
 
 class UI {
@@ -306,7 +378,6 @@ class UI {
 		gameMode = mode;
 		//messaging.clearMessages();
 	}
-
 }
 
 class AI {
@@ -316,6 +387,7 @@ class AI {
 		}
 		return this;
 	}
+
 	placeUnits() {
 		var spawns = d.qa(".team1spawn");
 		units.filter(u => u.team == 1).forEach(u => {
@@ -350,6 +422,7 @@ live('.valid', 'click', (evt) => {
 	selectedUnit = null;
 	UI.setMode();
 	Board.unHighlight();
+	console.log('done');
 });
 live('.team0spawn', 'click', (evt) => {
 	if (gameMode.startsWith('place-')) {
