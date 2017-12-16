@@ -1,261 +1,15 @@
 <!doctype html>
-<html lang="en">
+<html>
 <head>
 	<meta charset="utf-8">
-	<title>20kb.js</title>
-	<script src="js/viper.min.js"></script>
-	<script src="js/TinyAnimate.min.js"></script>
-	<script src="js/jsfxr.min.js"></script>
-	<script src="js/pixelfont.min.js"></script>
-	<style>
-		body {
-			height: 100vh;
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			margin: 0;
-			padding: 0;
-			background-color: #9d9d9d;
-			background: url("data:image/svg+xml,%3Csvg width='42' height='44' viewBox='0 0 42 44' xmlns='http://www.w3.org/2000/svg'%3E%3Cg id='Page-1' fill='none' fill-rule='evenodd'%3E%3Cg id='brick-wall' fill='%23333333' fill-opacity='0.54'%3E%3Cpath d='M0 0h42v44H0V0zm1 1h40v20H1V1zM0 23h20v20H0V23zm22 0h20v20H22V23z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E"),
-			radial-gradient(ellipse at center, rgba(150,150,150,1) 0%, rgba(0,0,0,1) 80%);
-		}
-		body > p {
-			position: absolute;
-			bottom: 20px;
-		}
-		body > p > canvas {
-			display: inline;
-			margin: 0 0.2em 0.4em 0;
-		}
-		#depot {
-			display: none;
-		}
-		#tools {
-			position: absolute;
-			top: 5px;
-			left: 5px;
-			display: flex;
-			list-style: none;
-		}
-		#tools > a {
-			display: block;
-		}
-		#tools li,
-		#tools > a {
-			border: 1px solid #333;
-			background: radial-gradient(ellipse at center, #888 0%, #666 100%);
-			min-width: 40px;
-			height: 40px;
-			color: white;
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			position: relative;
-			cursor: pointer;
-		}
-		#tools i {
-			transform: none;
-		}
-		.disabled {
-			filter: grayscale();
-			pointer-events: none;
-		}
-		#tools data {
-			position: absolute;
-			bottom: 0;
-			right: 0;
-		}
-		#rot:hover,
-		#mov:hover,
-		#arm:hover,
-		#end:hover,
-		.rotate #rot,
-		.move #mov,
-		.arm #arm {
-			color: yellow;
-			filter: brightness(1.1);
-		}
-		p#toolstip {
-			position: absolute;
-			top: 50px;
-			left: 5px;
-			color: white;
-		}
-		#ga {
-			display: grid;
-			background: url(img/grass2.gif);
-			grid-template-columns: repeat(11, 50px);
-			grid-template-rows: repeat(11, 50px);
-			grid-gap: 0;
-			position: relative;
-			transform: rotateX(60deg) rotateZ(45deg);
-		}
-		#ga::before {
-			content: '';
-			display: block;
-			width: 30px;
-			height: 100%;
-			position: absolute;
-			bottom: -30px;
-			right: -30px;
-			background: #543;
-			transform: translateY(-15px) skewY(45deg);
-		}
-		#ga::after {
-			content: '';
-			display: block;
-			width: 100%;
-			height: 30px;
-			position: absolute;
-			bottom: -30px;
-			left: 0;
-			background: #876;
-			transform: translateX(15px) skewX(45deg);
-		}
-		#animLayer {
-			width:100%;
-			height: 100%;
-			position: absolute;
-			border: 2px solid fuchsia;
-			z-index: 100;
-			pointer-events: none;
-		}
-		#animLayer > * {
-			position: absolute;
-		}
-		#ga > div {
-			background: olivedrab;
-			border: 1px solid #222;
-			display: flex;
-			align-items: center;
-			justify-content: center;
-		}
-		#ga > div:hover {
-			background: rgba(255,255,240,0.6);
-		}
-		.valid {
-			filter: brightness(1.25);
-		}
-		#ga > div.team0spawn { border-color: yellow; }
-		#ga > div.team1spawn { border-color: red; }
-		i,b {
-			display: block;
-			width: 32px;
-			height: 32px;
-			font-style: normal;
-			transform-origin: center bottom;
-			transform: rotateZ(-45deg) rotateY(60deg) translateX(50%) translateY(25%) scale(4);
-			image-rendering: pixelated;
-			filter: hue-rotate(0);
-		}
-		b {
-			transform: rotateZ(-45deg) rotateY(60deg) scale(5) translateX(13px) translateY(11px);
-			filter: hue-rotate(30deg);
-			pointer-events: none;
-		}
-		i:hover,
-		div:hover > i {
-			filter: brightness(1.25)
-					drop-shadow(1px 1px 0 yellow)
-					drop-shadow(-1px -1px 0 yellow);
-		}
-		i.team1:hover,
-		div:hover > i.team1 {
-			filter: brightness(1.25)
-					drop-shadow(1px 1px 0 yellow)
-					drop-shadow(-1px -1px 0 yellow)
-					hue-rotate(180deg);
-		}
-		.team1 {
-			filter: hue-rotate(180deg);
-		}
-
-		.mine {
-			background: url(img/mush.gif) no-repeat;
-			width: 16px;
-			height: 16px;
-		}
-		.goblin {
-			background: url(img/goblins.gif) no-repeat;
-			width: 18px;
-			height: 24px;
-			xanimation: flash 0.5s 5;
-		}
-		.fireskull {
-			background: url(img/hotheads.gif) no-repeat;
-			width: 18px;
-			height: 24px;
-			xanimation: vertbob 1.5s infinite;
-		}
-		.priest {
-			background: url(img/priests.gif) no-repeat;
-			width: 24px;
-			height: 32px;
-			xanimation: jiggle 0.5s 3 alternate;
-		}
-		.golem {
-			background: url(img/golems.gif) no-repeat;
-			width: 26px;
-			height: 32px;
-		}
-		.necro {
-			background: url(img/necros.gif) no-repeat;
-			width: 32px;
-			height: 32px;
-		}
-		.iceman {
-			background: url(img/icemen.gif) no-repeat;
-			width: 34px;
-			height: 34px;
-		}
-		.ss { background-position: 0 0; }		/* default */
-		.sw {}
-		.ww {
-			background-position: 0 100%;
-			transform: rotateZ(-45deg) rotateY(60deg) translateX(50%) translateY(25%) scaleX(-4) scaleY(4);
-		}
-		.nw {}
-		.nn { background-position: 0 50%; }
-		.ne {}
-		.ee { background-position: 0 100%; }
-		.se {}
-
-		@keyframes vertbob {
-			50% { padding-bottom: 3px; }
-		}
-		@keyframes flash {
-			50% { opacity: 0.5; }
-		}
-		@keyframes jiggle {
-			0% { transform: translate(4px,3px); }
-			17% { transform: translate(1px,4px); }
-			33% { transform: translate(3px,2px); }
-			50% { transform: translate(2px,5px); }
-			67% { transform: translate(4px,1px); }
-			83% { transform: translate(1px,3px); }
-		}
-
-		.move { cursor: move; }
-		.place-mine,
-		.place-goblin,
-		.place-fireskull,
-		.place-priest,
-		.place-golem,
-		.place-necro,
-		.place-iceman { cursor: copy; }
-
-		#credit {
-			position: absolute;
-			bottom: 0;
-			right: 0;
-		}
-		#credit,
-		#credit a {
-			color: #ccc;
-		}
+	<title>20KB</title>
+	<link rel="stylesheet" href="game.css">
+	<style type="text/css">
+	/*<!-- inject:css -->
+	<!-- endinject -->*/
 	</style>
 </head>
-<body class="">
+<body>
 	<ul id="tools">
 		<li><i class="mine"></i><data></data></li>
 		<li><i class="goblin"></i><data></data></li>
@@ -276,16 +30,25 @@
 	<div id="depot">
 	</div>
 	<p id="credit">Sprites by <a href="https://opengameart.org/users/redshrike">Redshrike</a></p>
+
+	<!-- inject:js -->
+	<script src="js/viper.min.js"></script>
+	<script src="js/TinyAnimate.min.js"></script>
+	<script src="js/jsfxr.min.js"></script>
+	<script src="js/pixelfont.min.js"></script>
 	<script src="js/game.js"></script>
+    <!-- endinject -->
 </body>
-<html>
+</html>
 <!--
 TODO
-anim: slide x & y
+	anim: slide x & y
 	anim: jiggle, flash, bob, spin?
+anim: fireball
 attacking effect/frame
 particle canvas?
 tool: orders 1,2,3
 ui: health overlays
 ui: toolbox countdown circle
+sfx: prevent many
 -->

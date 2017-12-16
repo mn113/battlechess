@@ -213,7 +213,7 @@ class Unit {
 
 	// Animate to destination directly, as the crow flies, ignoring obstacles:
 	_flyTo(dest) {
-		var orientation = ""; // TODO
+		//var orientation = ""; // TODO
 
 		// Clone el to dest first:
 		var clone = this.cloneToAnim();
@@ -298,25 +298,18 @@ class Board {
 		for (var y=0; y<height; y++) {
 			for (var x=0; x<width; x++) {
 				var div = d.e("div");
-				if (x !== y && Math.random() > 0.85) div.innerHTML = `<b>${PLANTS.random()}</b>`;
 				$ga.appendChild(div);
 				div.setAttribute("id", "x"+x+"y"+y);
+				// Add things:
 				if (x < 5 && y < 5) div.classList.add('team0spawn');
 				if (x > width - 6 && y > height - 6) div.classList.add('team1spawn');
+				if (x+y > 6 && x+y < width + height - 6 & Math.random() > 0.5)
+					div.innerHTML = `<b>${PLANTS.random()}</b>`;
+
 				div.style.zIndex = x + y;	// (0,0) will be furthest away square
 				// Apply random colour change to each cell:
 				div.style.background = COLOURS.random();
-				//var b = (x+y+100) / 100;
-				//div.style.filter = `brightness(${b})`;	// gets inherited by children
 				cells.push([x,y]);
-
-				//var canv = document.createElement('canvas');
-				//canv.width = 32;
-				//canv.height = 32;
-				//var ctx = canv.getContext('2d');
-				//ctx.font = '32px serif';
-				//ctx.fillText(WEAP[0], 10, 50);
-				//ctx.fillText(PIECES[0], 10, 50);
 			}
 		}
 		// Add anim layer

@@ -1,0 +1,246 @@
+body {
+	height: 100vh;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	margin: 0;
+	padding: 0;
+	background-color: #999;
+	background: url("data:image/svg+xml,%3Csvg width='42' height='44' viewBox='0 0 42 44' xmlns='http://www.w3.org/2000/svg'%3E%3Cg id='Page-1' fill='none' fill-rule='evenodd'%3E%3Cg id='brick-wall' fill='%23333333' fill-opacity='0.54'%3E%3Cpath d='M0 0h42v44H0V0zm1 1h40v20H1V1zM0 23h20v20H0V23zm22 0h20v20H22V23z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E"),
+	radial-gradient(ellipse at center, #999 0%, #000 80%);
+}
+body > p {
+	position: absolute;
+	bottom: 20px;
+}
+body > p > canvas {
+	display: inline;
+	margin: 0 0.2em 0.4em 0;
+}
+#depot {
+	display: none;
+}
+#tools {
+	position: absolute;
+	top: 5px;
+	left: 5px;
+	display: flex;
+	list-style: none;
+}
+#tools > a {
+	display: block;
+}
+#tools li,
+#tools > a {
+	border: 1px solid #333;
+	background: radial-gradient(ellipse at center, #888 0%, #666 100%);
+	min-width: 40px;
+	height: 40px;
+	color: #fff;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	position: relative;
+	cursor: pointer;
+}
+#tools i {
+	transform: none;
+}
+.disabled {
+	filter: grayscale();
+	pointer-events: none;
+}
+#tools data {
+	position: absolute;
+	bottom: 0;
+	right: 0;
+}
+#rot:hover,
+#mov:hover,
+#arm:hover,
+#end:hover,
+.rotate #rot,
+.move #mov,
+.arm #arm {
+	color: #ff0;
+	filter: brightness(1.1);
+}
+p#toolstip {
+	position: absolute;
+	top: 50px;
+	left: 5px;
+	color: #fff;
+}
+#ga {
+	display: grid;
+	background-color: #9d7;
+	background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='brown' fill-opacity='1' fill-rule='evenodd'/%3E%3C/svg%3E");
+	background-size: 7%;
+	grid-template-columns: repeat(11, 50px);
+	grid-template-rows: repeat(11, 50px);
+	grid-gap: 0;
+	position: relative;
+	transform: rotateX(60deg) rotateZ(45deg);
+}
+#ga::before {
+	content: '';
+	display: block;
+	width: 30px;
+	height: 100%;
+	position: absolute;
+	bottom: -30px;
+	right: -30px;
+	background: #543;
+	transform: translateY(-15px) skewY(45deg);
+}
+#ga::after {
+	content: '';
+	display: block;
+	width: 100%;
+	height: 30px;
+	position: absolute;
+	bottom: -30px;
+	left: 0;
+	background: #876;
+	transform: translateX(15px) skewX(45deg);
+}
+#animLayer {
+	width:100%;
+	height: 100%;
+	position: absolute;
+	z-index: 100;
+	pointer-events: none;
+}
+#animLayer > * {
+	position: absolute;
+}
+#ga > div {
+	background: olivedrab;
+	border: 1px solid #222;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+#ga > div:hover {
+	background: rgba(255,255,240,0.6);
+}
+.valid {
+	filter: brightness(1.25);
+}
+#ga > div.team0spawn { border-color: yellow; }
+#ga > div.team1spawn { border-color: red; }
+i,b {
+	display: block;
+	width: 32px;
+	height: 32px;
+	font-style: normal;
+	transform-origin: center bottom;
+	transform: rotateZ(-45deg) rotateY(60deg) translateX(50%) translateY(25%) scale(4);
+	image-rendering: pixelated;
+	filter: hue-rotate(0);
+}
+b {
+	transform: rotateZ(-45deg) rotateY(60deg) scale(5) translateX(13px) translateY(11px);
+	filter: hue-rotate(30deg);
+	pointer-events: none;
+}
+i:hover,
+div:hover > i {
+	filter: brightness(1.25)
+			drop-shadow(1px 1px 0 yellow)
+			drop-shadow(-1px -1px 0 yellow);
+}
+i.team1:hover,
+div:hover > i.team1 {
+	filter: brightness(1.25)
+			drop-shadow(1px 1px 0 yellow)
+			drop-shadow(-1px -1px 0 yellow)
+			hue-rotate(180deg);
+}
+.team1 {
+	filter: hue-rotate(180deg);
+}
+
+.mine {
+	background: url(img/mush.gif) no-repeat;
+	width: 16px;
+	height: 16px;
+}
+.goblin {
+	background: url(img/goblins.gif) no-repeat;
+	width: 18px;
+	height: 24px;
+	xanimation: flash 0.5s 5;
+}
+.fireskull {
+	background: url(img/hotheads.gif) no-repeat;
+	width: 18px;
+	height: 24px;
+	xanimation: vertbob 1.5s infinite;
+}
+.priest {
+	background: url(img/priests.gif) no-repeat;
+	width: 24px;
+	height: 32px;
+	xanimation: jiggle 0.5s 3 alternate;
+}
+.golem {
+	background: url(img/golems.gif) no-repeat;
+	width: 26px;
+	height: 32px;
+}
+.necro {
+	background: url(img/necros.gif) no-repeat;
+	width: 32px;
+	height: 32px;
+}
+.iceman {
+	background: url(img/icemen.gif) no-repeat;
+	width: 34px;
+	height: 34px;
+}
+.ss { background-position: 0 0; }		/* default */
+.sw {}
+.ww {
+	background-position: 0 100%;
+	transform: rotateZ(-45deg) rotateY(60deg) translateX(50%) translateY(25%) scaleX(-4) scaleY(4);
+}
+.nw {}
+.nn { background-position: 0 50%; }
+.ne {}
+.ee { background-position: 0 100%; }
+.se {}
+
+@keyframes vertbob {
+	50% { padding-bottom: 3px; }
+}
+@keyframes flash {
+	50% { opacity: 0.5; }
+}
+@keyframes jiggle {
+	0% { transform: translate(4px,3px); }
+	17% { transform: translate(1px,4px); }
+	33% { transform: translate(3px,2px); }
+	50% { transform: translate(2px,5px); }
+	67% { transform: translate(4px,1px); }
+	83% { transform: translate(1px,3px); }
+}
+
+.move { cursor: move; }
+.place-mine,
+.place-goblin,
+.place-fireskull,
+.place-priest,
+.place-golem,
+.place-necro,
+.place-iceman { cursor: copy; }
+
+#credit {
+	position: absolute;
+	bottom: 0;
+	right: 0;
+}
+#credit,
+#credit a {
+	color: #ccc;
+}

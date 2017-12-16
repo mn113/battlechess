@@ -1,0 +1,22 @@
+{
+  "name": "20kb",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "gulp": "^3.9.1",
+    "gulp-base64": "^0.1.3",
+    "gulp-clean-css": "^3.9.0",
+    "gulp-concat": "^2.6.1",
+    "gulp-inject": "^4.3.0",
+    "gulp-order": "^1.1.1",
+    "gulp-size": "^2.1.0",
+    "gulp-uglify": "^3.0.0",
+    "uglify-es": "^3.2.2"
+  }
+}
