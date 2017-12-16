@@ -57,7 +57,7 @@ const SPESH = ["💥","🛡️","⛸️","⚫","🔮","💢"];
 // Text
 const TEXT = {	// key : [Name, Movement, Attack, Special]
 	"mine": ["Mineshroom", "None", "Explodes when anything steps on it", "Triggers a big explosion with more damage"],
-	"goblin": ["Goblin", "One step in 4 possible directions.", "Melee (weak)", "Can raise his shield to block 50% of damage"],
+	"qoblin": ["Goblin", "One step in 4 possible directions.", "Melee (weak)", "Can raise his shield to block 50% of damage"],
 	"fireskull": ["Hothead", "Moves in 2x1 doglegs, 8 possible directions", "Melee (average)", "None, but can float past obstacles"],
 	"priest": ["Priest", "Moves only on diagonals", "Melee (weak)", "Can rush through a line of enemies, slashing them all"],
 	"golem": ["Golem","Moves up to 4 steps in the 4 non-diagonal directions", "Melee (average)", "Can spit a rock with decent range and damage"],
@@ -72,7 +72,7 @@ const TRANSP = [
 	"rgba(130,180,110,0.7)", "rgba(150,180,110,0.7)", "rgba(130,160,110,0.7)"
 ];
 
-const baseSquad = "mine,mine,goblin,goblin,goblin,goblin,fireskull,fireskull,priest,priest,golem,golem,necro,iceman"
+const baseSquad = "mine,mine,qoblin,qoblin,qoblin,qoblin,fireskull,fireskull,priest,priest,golem,golem,necro,iceman"
 .split(",");
 
 var cells = [];
@@ -114,6 +114,10 @@ class Unit {
 		this.facing = (team == 0) ? 'ss' : 'nn';
 		this.x = x;
 		this.y = y;
+		// Combat attributes:
+		var c = type.charAt(0);
+		this.att = {m:5,q:5,f:7,p:6,g:7,n:8,i:9}[c];
+		this.hp = this.def = {m:0,q:5,f:5,p:6,g:9,n:7,i:10}[c];
 		// DOM element:
 		this.el = d.e('i');
 		this.el.setAttribute("id", this.id);
@@ -174,7 +178,7 @@ class Unit {
 
 		switch(this.type) {
 			case 'mine': return [];
-			case 'goblin': return orth4;
+			case 'qoblin': return orth4;
 			case 'fireskull': return doglegs;
 			case 'priest': return diagAll;
 			case 'golem': return orthAllLtd;
@@ -183,7 +187,7 @@ class Unit {
 		}
 	}
 
-	// Put unit in board square:
+	// Put unit in board square. Also check how to handle what is there:
 	placeAt(point) {
 		var [x,y] = point;
 		d.q("#x"+x+"y"+y).appendChild(this.el);
@@ -192,6 +196,16 @@ class Unit {
 		this.x = x;
 		this.y = y;
 		depots[this.team].splice(depots[this.team].indexOf(this),1);
+
+		// What is here?
+		var obstIds = b.at(point),
+			obsts = obstIds.map(id => units.find(u => u.id == id)).filter(o => typeof o == 'object');
+		console.log(point, obsts);
+		if (obsts.some(o => o.team !== this.team)) {
+			// FIGHT!
+			console.log("fight at", point, "vs", obsts);
+			this.melee(obsts[0]);
+		}
 
 		// Done
 		this.vMoves = this._validMoves();
@@ -226,10 +240,18 @@ class Unit {
 			console.log(route);
 			// Walk loop:
 			var step = function() {
-				// If enemy, fight him
+				// Check next cell, who is there?
+				var nextCell = route.shift(),
+					obstIds = b.at(nextCell),
+					obsts = obstIds.map(id => units.find(u => u.id == id)).filter(o => typeof o == 'object');
+				console.log(nextCell, obsts);
 
-				// TODO
-				if (route.length > 0) this._stepTo(route.shift(), step);
+				if (obsts.some(o => o.team === this.team)) {
+					// path blocked
+					console.log("blocked at", nextCell);
+					return;
+				}
+				else if (route.length > 0) this._stepTo(nextCell, step);
 			}.bind(this);
 			step();
 		}
@@ -290,12 +312,30 @@ class Unit {
 		b.markCell(x,y, 'targeted');
 	}
 
-	attack(point) {
-		var [x,y] = point;	// eslint-disable-line
-		// Animation?
-		// stats battle ATT/DEF
+	melee(enemy) {
+		console.log(enemy);
+		var att1 = this.att + [-1,1].random(),
+			def1 = this.def,
+			att2 = enemy.att,
+			def2 = enemy.def;
+		console.log(att1, def1, att2, def2);
+
+		// Reversal?
+		if (Math.random() > 0.83) {
+			this.hp -= att2;
+			this.showHealthBar();
+			// Death?
+			setTimeout(() => { if (this.hp < 0) this.remove(); }, 750);
+		}
+		else {
+			enemy.hp -= att1;
+			enemy.showHealthBar();
+			// Death?
+			setTimeout(() => { if (enemy.hp < 0) enemy.remove(); }, 750);
+		}
 	}
 
+	// NOTE: obsolete method?
 	rotate() {
 		if (this.type == 'mine') return;
 		var seq = ['ss','ww','nn','ee'];
@@ -308,10 +348,12 @@ class Unit {
 		return this;
 	}
 
-	showHealthBar(text, percentage = 50) {		// limit percentages to 25,50,75
+	showHealthBar() {
+		var pct = 25 * Math.ceil(4 * this.hp / this.def);		// limit percentages to 25,50,75,100
+		console.log(this.id, this.hp, pct);
 		var $bar = d.e("figure");
-		$bar.classList.add('percent'+percentage);
-		$bar.innerHTML = text;
+		$bar.classList.add('p'+pct);
+		$bar.innerHTML = this.id + " p" + pct;
 		this.el.appendChild($bar);
 
 		setTimeout(function() {
@@ -339,6 +381,8 @@ class Unit {
 class Board {
 	// Create the board HTML element:
 	constructor(width, height=width) {
+		this.w = width;
+		this.h = height;
 		// Build board:
 		for (var y=0; y<height; y++) {
 			for (var x=0; x<width; x++) {
@@ -439,7 +483,7 @@ class UI {
 		// Count units not on the board:
 		var depotCounts = [
 			2 - d.qa("#ga .mine.team0").length,
-			4 - d.qa("#ga .goblin.team0").length,
+			4 - d.qa("#ga .qoblin.team0").length,
 			2 - d.qa("#ga .fireskull.team0").length,
 			2 - d.qa("#ga .priest.team0").length,
 			2 - d.qa("#ga .golem.team0").length,
@@ -495,8 +539,8 @@ for (var t of baseSquad) new Unit(t,0);
 UI.drawTools();
 // AI:
 var opp = new AI();
-b.placeUnits(1,5);
-b.placeUnits(0,5);
+b.placeUnits(1,7);
+b.placeUnits(0,7);
 
 
 // Tools behaviours:
@@ -516,12 +560,12 @@ d.qa("#tools i").forEach(el => {
 
 // Behaviours on cells:
 live('.valid', 'click', (evt) => {
-	console.log(selectedUnit.id, 'directed to', evt.target.id);
-	selectedUnit.moveTo(unwrap(evt.target.id));
+	var tid = (evt.target.id.startsWith('x')) ? evt.target.id : evt.target.parentNode.id;
+	console.log(selectedUnit.id, 'directed to', tid);
+	selectedUnit.moveTo(unwrap(tid));
 	selectedUnit = null;
 	UI.setMode();
 	b.unHighlight();
-	console.log('done');
 });
 live('.team0spawn', 'click', (evt) => {
 	if (gameMode.startsWith('place-')) {

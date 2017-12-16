@@ -65,11 +65,18 @@ body > p > canvas {
 	color: #ff0;
 	filter: brightness(1.2);
 }
-p#toolstip {
+#toolstip {
 	position: absolute;
 	top: 50px;
 	left: 5px;
 	color: #fff;
+}
+#toolstip u {
+	text-decoration: none;
+	font-weight: bold;
+}
+#toolstip u:first-child {
+	font-size: 2em;
 }
 #ga {
 	display: grid;
@@ -125,7 +132,7 @@ p#toolstip {
 	background: rgba(255,255,240,0.6);
 }
 .valid {
-	filter: brightness(1.25);
+	filter: brightness(1.33);
 }
 #ga > div.team0spawn { border-color: #444; background: rgba(195,175,0,.5); }
 #ga > div.team1spawn { border-color: #444; background: rgba(175,95,175,.3); }
@@ -166,7 +173,7 @@ div:hover > i.team1 {
 	width: 16px;
 	height: 16px;
 }
-.goblin {
+.qoblin {
 	background: url(img/goblins.gif) no-repeat;
 	width: 18px;
 	height: 24px;
@@ -175,7 +182,7 @@ div:hover > i.team1 {
 .fireskull {
 	background: url(img/hotheads.gif) no-repeat;
 	width: 18px;
-	height: 24px;
+	height: 32px;
 	xanimation: vertbob 1.5s infinite;
 }
 .priest {
@@ -233,7 +240,7 @@ div:hover > i.team1 {
 
 .move { cursor: move; }
 .place-mine,
-.place-goblin,
+.place-qoblin,
 .place-fireskull,
 .place-priest,
 .place-golem,
@@ -280,6 +287,7 @@ i figure:after { /* health bar contents */
 	height: 2px;
 	width: 50%;
 }
-i figure.percent25:after { width: 25%; background: orange; }
-i figure.percent50:after { width: 50%; background: yellow; }
-i figure.percent75:after { width: 75%; background: lawngreen; }
+i figure.p25:after { width: 25%; background: orange; }
+i figure.p50:after { width: 50%; background: yellow; }
+i figure.p75:after { width: 75%; background: lawngreen; }
+i figure.p100:after { width: 100%; background: green; }
