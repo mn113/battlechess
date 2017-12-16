@@ -77,10 +77,11 @@ const baseSquad = "mine,mine,qoblin,qoblin,qoblin,qoblin,fireskull,fireskull,pri
 
 var cells = [];
 var units = [];
-var gameMode = null;
+var gameMode = null;	// place, move, spesh, ai
 var selectedUnit = null;
 var depots = {0: [], 1: []};
 var guid = 0;
+var myTurn = 1;
 
 // Sounds
 var sounds = {
@@ -101,7 +102,13 @@ var sounds = {
 // eslint-disable-next-line
 function endTurn() {
 	b.unHighlight();
+	// +1 health for all!
+	for (var u of units) {
+		if (u.hp < u.def) u.hp++;
+	}
 	// AI's turn
+	myTurn = !myTurn;
+	// Reset place/move/atts
 }
 
 const unwrap = (id) => id.slice(1).split("y").map(n => +n);
@@ -163,7 +170,9 @@ class Unit {
 
 	// Add this unit's [x,y] to each member of an array of points:
 	_addTo(points) {
-		return points.map(p => [this.x+p[0], this.y+p[1]]);
+		return points
+		.map(p => [this.x+p[0], this.y+p[1]])
+		.filter(p => (p[0] >= 0 && p[1] >= 0 && p[0] < b.w && p[1] < b.h));	// avoid o-o-b
 	}
 
 	// Calculate all valid squares this piece can move to from here:

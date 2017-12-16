@@ -246,7 +246,10 @@ div:hover > i.team1 {
 .place-golem,
 .place-necro,
 .place-iceman { cursor: copy; }
-
+.ai * {
+	pointer-events: none;
+	cursor: not-allowed;
+}
 #credit {
 	position: absolute;
 	bottom: 0;
