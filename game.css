@@ -63,7 +63,7 @@ body > p > canvas {
 .move #mov,
 .arm #arm {
 	color: #ff0;
-	filter: brightness(1.1);
+	filter: brightness(1.2);
 }
 p#toolstip {
 	position: absolute;
@@ -127,7 +127,7 @@ p#toolstip {
 .valid {
 	filter: brightness(1.25);
 }
-#ga > div.team0spawn { border-color: yellow; }
+#ga > div.team0spawn { border-color: #ff0; }
 #ga > div.team1spawn { border-color: red; }
 i,b {
 	display: block;
@@ -147,14 +147,14 @@ b {
 i:hover,
 div:hover > i {
 	filter: brightness(1.25)
-			drop-shadow(1px 1px 0 yellow)
-			drop-shadow(-1px -1px 0 yellow);
+			drop-shadow(1px 1px 0 #ff0)
+			drop-shadow(-1px -1px 0 #ff0);
 }
 i.team1:hover,
 div:hover > i.team1 {
 	filter: brightness(1.25)
-			drop-shadow(1px 1px 0 yellow)
-			drop-shadow(-1px -1px 0 yellow)
+			drop-shadow(1px 1px 0 #ff0)
+			drop-shadow(-1px -1px 0 #ff0)
 			hue-rotate(180deg);
 }
 .team1 {
@@ -249,3 +249,37 @@ div:hover > i.team1 {
 #credit a {
 	color: #ccc;
 }
+
+i figure {
+	position: absolute;
+	top: -35px;
+	left: -50px;
+	width: 40px;	/* needs to contain all text values without wrapping */
+	height: 17px;
+	text-align: center;
+	font-size: 8px;
+	font-family: Arial;
+	white-space: nowrap;
+	color: white;
+	text-shadow: 0 0 1px black, 0 0 1px black, 0 0 1px black, 0 0 1px black;
+}
+i figure:before {	/* health bar container */
+	content: '';
+	position: absolute;
+	bottom: 0;
+	width: 100%;
+	height: 4px;
+	border: 1px solid white;
+	background: black;
+}
+i figure:after { /* health bar contents */
+	content: '';
+	position: absolute;
+	left: 2px;
+	bottom: 2px;
+	height: 2px;
+	width: 50%;
+}
+i figure.percent25:after { width: 25%; background: orange; }
+i figure.percent50:after { width: 50%; background: yellow; }
+i figure.percent75:after { width: 75%; background: lawngreen; }

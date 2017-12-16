@@ -5,6 +5,13 @@
 Array.prototype.random = function() {
 	return this[Math.floor(Math.random() * this.length)];
 };
+Array.prototype.shuffle = function() {
+	for (let i = this.length - 1; i > 0; i--) {
+		let j = Math.floor(Math.random() * (i + 1));
+		[this[i], this[j]] = [this[j], this[i]];
+	}
+	return this;
+};
 // helper for enabling IE 8 event bindings
 function addEvent(el, type, handler) {
 	if (el.attachEvent) el.attachEvent('on'+type, handler); else el.addEventListener(type, handler);
@@ -35,8 +42,9 @@ var $ga = d.q("#ga");
 // Unicode icons:
 //const PIECES = ["🤖","👻","😈","👹","🦄","🐲","🐍","💣","🕸️","🏂"];
 const PLANTS = ["🎄","🌲","🌳","🌵"];
-//const WEAP = ["🔪","🗡️","🔫","⛏️","⛸️"];
-//const FX = ["💥","🔥"];
+//const WEAP = ["🔪","🗡️","🔫","⛏️"];
+const SPESH = ["💥","🛡️","⛸️","⚫","🔮","💢"];
+//const FX = [,"🔥"];
 //const DIRS = ["⬆️","↗️","➡️","↘️","⬇️","↙️","⬅️","↖️"];
 
 // Text
@@ -136,6 +144,7 @@ class Unit {
 				UI.setMode('move-'+this.id);	// causes highlight to remain
 			}
 			if (gameMode == 'explode') this.explode();
+			if (gameMode == 'health') this.showHealthBar(this.id, 100);
 		});
 		this.el.addEventListener('mouseout', () => {
 			if (gameMode == 'move') Board.unHighlight();
@@ -196,7 +205,7 @@ class Unit {
 		// Orientation:
 		var dx = dest[0] - this.x,
 			dy = dest[1] - this.y,
-			angle = (360 / 6.28) * Math.atan2(dy,dx);
+			angle = (360 / 6.283) * Math.atan2(dy,dx);
 		var dir = (angle >= 0 && angle <= 90) ? 'ss'
 				: (angle <= -90 && angle >= -180) ? 'nn'
 				: (angle > 90 && angle < 180) ? 'ww'
@@ -212,6 +221,7 @@ class Unit {
 		// Walk loop:
 		var step = function() {
 			// If enemy, fight him
+
 			// TODO
 			if (route.length > 0) this._stepTo(route.shift(), step);
 		}.bind(this);
@@ -234,7 +244,7 @@ class Unit {
 	// Animate to destination directly, as the crow flies, ignoring obstacles:
 	_flyTo(dest, duration=600, cb) {
 		// Clone el to dest first:
-		var clone = this.cloneToAnim();
+		var clone = this._cloneToAnim();
 		// Calculate final x/y:
 		var cx = (this.x + 0.5) * 50,
 			cy = (this.y + 0.5) * 50;	// CELL WIDTH
@@ -258,7 +268,9 @@ class Unit {
 		);
 	}
 
-	cloneToAnim() {
+	// Clone the element to the animation layer, so it can move freely
+	// around the board before returning to a square:
+	_cloneToAnim() {
 		var clone = this.el.cloneNode();
 		d.q("#animLayer").appendChild(clone);
 		clone.style.left = (this.x + 0.5) * 50 + "px";
@@ -290,6 +302,17 @@ class Unit {
 		return this;
 	}
 
+	showHealthBar(text, percentage = 50) {		// limit percentages to 25,50,75
+		var $bar = d.e("figure");
+		$bar.classList.add('percent'+percentage);
+		$bar.innerHTML = text;
+		this.el.appendChild($bar);
+
+		setTimeout(function() {
+			$bar.remove();
+		}, 1500);
+	}
+
 	explode() {
 		// Animate blur
 		this.el.classList.add('exploding');
@@ -306,9 +329,10 @@ class Unit {
 	}
 }
 
+
 class Board {
 	// Create the board HTML element:
-	static build(width, height=width) {
+	constructor(width, height=width) {
 		// Build board:
 		for (var y=0; y<height; y++) {
 			for (var x=0; x<width; x++) {
@@ -316,10 +340,12 @@ class Board {
 				$ga.appendChild(div);
 				div.setAttribute("id", "x"+x+"y"+y);
 				// Add things:
-				if (x < 5 && y < 5) div.classList.add('team0spawn');
-				if (x > width - 6 && y > height - 6) div.classList.add('team1spawn');
-				if (x+y > 6 && x+y < width + height - 6 & Math.random() > 0.5)
-					div.innerHTML = `<b>${PLANTS.random()}</b>`;
+				if (x < 5 && y < 5)
+					div.classList.add('team0spawn');
+				else if (x > width - 6 && y > height - 6)
+					div.classList.add('team1spawn');
+				else if (Math.random() > 0.5)
+					div.innerHTML = `<b id="tree${guid++}">${PLANTS.random()}</b>`;
 
 				div.style.zIndex = x + y;	// (0,0) will be furthest away square
 				// Apply random colour change to each cell:
@@ -328,30 +354,38 @@ class Board {
 			}
 		}
 		// Add anim layer
-		var anim = d.e('aside');
-		anim.setAttribute("id", "animLayer");
-		$ga.appendChild(anim);
+		var animLayer = d.e('aside');
+		animLayer.setAttribute("id", "animLayer");
+		$ga.appendChild(animLayer);
+		return this;
 	}
 
 	// Apply a class to a cell:
-	static markCell(x,y,className) {
+	markCell(x,y,className) {
 		d.q("#x"+x+"y"+y).classList.add(className);
 	}
 
 	// TODO: unMarkCells
 
+	// Check what's in a square - returns array of ids:
+	at(point) {
+		var [x, y] = point;
+		var nodes = d.q("#x"+x+"y"+y).childNodes;
+		return Array.from(nodes).map(n => n.id);
+	}
+
 	// Give a group of squares 'valid' class
-	static highlight(cells) {
+	highlight(cells) {
 		cells.forEach(c => d.q("#x"+c[0]+"y"+c[1]).classList.add('valid'));
 	}
 
 	// Clear 'valid' classes from squares
-	static unHighlight() {
+	unHighlight() {
 		d.qa("div.valid").forEach(el => el.classList.remove('valid'));
 	}
 
 	// Figure out which squares to visit to get from A to B (ortho or diag):
-	static findRoute(a,z) {
+	findRoute(a,z) {
 		if (arrEq(a,z)) return [];
 		var route = [];
 
@@ -370,8 +404,25 @@ class Board {
 		return route;
 	}
 
-	// TODO: make non-static class
+	placeUnits(team, num) {
+		var spawns = d.qa(".team"+team+"spawn");
+		// Get num units from this team:
+		units
+		.filter(u => u.team == team)
+		.shuffle()
+		.slice(0,num)
+		.forEach(u => {
+			// Find an empty spawnable cell:
+			do {
+				var xy = unwrap(Array.from(spawns.values()).random().id);
+			} while (b.at(xy).length > 0);
+			// Place unit:
+			u.placeAt(xy);
+		});
+	}
+
 }
+
 
 class UI {
 	static drawTools() {
@@ -415,6 +466,7 @@ class UI {
 	}
 }
 
+
 class AI {
 	constructor() {
 		for (var t of baseSquad) {
@@ -422,26 +474,20 @@ class AI {
 		}
 		return this;
 	}
-
-	placeUnits() {
-		var spawns = d.qa(".team1spawn");
-		units.filter(u => u.team == 1).forEach(u => {
-			// Place randomly in spawn area;
-			u.placeAt(unwrap(Array.from(spawns.values()).random().id));	// TODO avoid occupied spawnPts
-		});
-	}
 }
+
 
 // Create everything:
-Board.build(11);
-for (var t of baseSquad) {
-	new Unit(t,0);
-}
+var b = new Board(11);
+// Team 0's players:
+for (var t of baseSquad) new Unit(t,0);
+// Update:
 UI.drawTools();
-
 // AI:
 var opp = new AI();
-opp.placeUnits();
+b.placeUnits(1,5);
+b.placeUnits(0,5);
+
 
 // Tools behaviours:
 d.qa("#tools i").forEach(el => {
