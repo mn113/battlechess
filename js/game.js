@@ -1,4 +1,4 @@
-/* global pixCanv, Viper, TinyAnimate, jsfxr */
+/* global pixCanv, TinyAnimate, jsfxr */
 /* eslint-env browser */
 /* eslint-disable eqeqeq, no-sparse-arrays */
 
@@ -11,7 +11,7 @@ function addEvent(el, type, handler) {
 }
 // live binding helper using matchesSelector
 function live(selector, event, callback, context) {
-	addEvent(context || document, event, function(e) {
+	addEvent(context || d, event, function(e) {
 		var found, el = e.target || e.srcElement;
 		while (el && el.matches && el !== context && !(found = el.matches(selector))) el = el.parentElement;
 		if (found) callback.call(el, e);
@@ -98,7 +98,7 @@ class Unit {
 		this.type = type;
 		this.id = type + guid++;
 		this.team = team;
-		this.facing = (team == 1) ? 'nn' : 'ss';
+		this.facing = (team == 0) ? 'ss' : 'nn';
 		this.x = x;
 		this.y = y;
 		// DOM element:
@@ -131,6 +131,7 @@ class Unit {
 			e.stopPropagation();
 			if (gameMode == 'rotate') this.rotate();
 			if (gameMode == 'move') {
+				// Highlight the valid cells we can move to:
 				selectedUnit = this;
 				UI.setMode('move-'+this.id);	// causes highlight to remain
 			}
@@ -183,21 +184,42 @@ class Unit {
 		return this;
 	}
 
+	// Face a given direction:
+	face(dir) {
+		this.el.classList.remove(this.facing);
+		this.el.classList.add(dir);
+		this.facing = dir;
+	}
+
 	// Animate square-by-square towards destination:
 	moveTo(dest) {
+		// Orientation:
+		var dx = dest[0] - this.x,
+			dy = dest[1] - this.y,
+			angle = (360 / 6.28) * Math.atan2(dy,dx);
+		var dir = (angle >= 0 && angle <= 90) ? 'ss'
+				: (angle <= -90 && angle >= -180) ? 'nn'
+				: (angle > 90 && angle < 180) ? 'ww'
+				: (angle < 0 && angle > -90) ? 'ee' : 'unknown';
+		console.log(angle, dir);
+		this.face(dir);
+
 		if (this.type == 'fireskull') return this._flyTo(dest);
+
 		// Calculate animation path, must go square by square:
-		// Interpolate route:
-		var route = Board.findRoute([this.x,this.y], dest);	// BUG
+		var route = Board.findRoute([this.x,this.y], dest);
 		console.log(route);
 		// Walk loop:
 		var step = function() {
+			// If enemy, fight him
+			// TODO
 			if (route.length > 0) this._stepTo(route.shift(), step);
 		}.bind(this);
 		step();
 
 		// Done
 		this.vMoves = this._validMoves();
+		this.face(this.team == 0 ? 'ss' : 'nn');
 		return this;
 	}
 
@@ -205,35 +227,34 @@ class Unit {
 	// Chain these to move longer distances
 	_stepTo(dest, cb) {
 		sounds.play('move');
-		//Viper({
-		//}).start();
-		this.placeAt(dest);
-		if (cb) setTimeout(cb, 500);
+		this._flyTo(dest, 300, cb);
+		//if (cb) setTimeout(cb, 315);
 	}
 
 	// Animate to destination directly, as the crow flies, ignoring obstacles:
-	_flyTo(dest) {
-		//var orientation = ""; // TODO
-
+	_flyTo(dest, duration=600, cb) {
 		// Clone el to dest first:
 		var clone = this.cloneToAnim();
-		// Calclate final x/y:
+		// Calculate final x/y:
 		var cx = (this.x + 0.5) * 50,
 			cy = (this.y + 0.5) * 50;	// CELL WIDTH
 		var zx = (dest[0] + 0.5) * 50,
 			zy = (dest[1] + 0.5) * 50;
-		// Then animate 2 transforms:
+
+		// Then animate 2 simultaneous transforms for top & left:
+		TinyAnimate.animateCSS(
+			clone, 'left', 'px', cx, zx,
+			duration, 'linear'
+		);
 		TinyAnimate.animateCSS(
 			clone, 'top', 'px', cy, zy,
-			600, 'linear',
+			duration, 'linear',
 			// when done:
 			() => {
 				this.placeAt(dest);
 				clone.parentNode.removeChild(clone);
+				if (cb) cb();
 			}
-		);
-		TinyAnimate.animateCSS(
-			clone, 'left', 'px', cx, zx, 600
 		);
 	}
 
@@ -271,18 +292,12 @@ class Unit {
 
 	explode() {
 		// Animate blur
-		Viper({
-			object: {b:0},
-			property: 'b',
-			to: 20,
-			duration: 950,
-			transition: Viper.Transitions.sine.out,
-			start: () => sounds.play('explode'),
-			update: (o) => {
-				this.el.style.filter = `blur(${o.b}px)`;
-			},
-			finish: () => this.remove()
-		}).start();
+		this.el.classList.add('exploding');
+		sounds.play('explode');
+		setTimeout(() => {
+			this.remove();
+			this.el.classList.remove('exploding');
+		}, 900);
 	}
 
 	remove() {
