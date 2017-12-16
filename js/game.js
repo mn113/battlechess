@@ -56,13 +56,13 @@ const SPESH = ["💥","🛡️","⛸️","⚫","🔮","💢"];
 
 // Text
 const TEXT = {	// key : [Name, Movement, Attack, Special]
-	"mine": ["Mineshroom", "None", "Explodes when anything steps on it", "Triggers a big explosion with more damage"],
-	"qoblin": ["Goblin", "One step in 4 possible directions.", "Melee (weak)", "Can raise his shield to block 50% of damage"],
-	"fireskull": ["Hothead", "Moves in 2x1 doglegs, 8 possible directions", "Melee (average)", "None, but can float past obstacles"],
-	"priest": ["Priest", "Moves only on diagonals", "Melee (weak)", "Can rush through a line of enemies, slashing them all"],
-	"golem": ["Golem","Moves up to 4 steps in the 4 non-diagonal directions", "Melee (average)", "Can spit a rock with decent range and damage"],
-	"necro": ["Necromancer", "Unlimited movement in 8 directions", "Melee (strong)", "Can cast a healing spell on units surrounding her"],
-	"iceman": ["Ice Demon", "Moves 1 step in all 8 directions", "Melee (strong)", "His jump causes a damaging earthquake"]
+	"mine": ["Mineshroom", "None", "Explodes when stepped on", "N/A", "Triggers a big explosion with more damage"],
+	"qoblin": ["Goblin", "One step in 4 possible directions.", "Fisticuffs (weak)", "weak", "Can raise his shield to block 50% of damage"],
+	"fireskull": ["Hothead", "Moves in 2x1 doglegs, 8 possible directions", "Fiery Bite (average)", "weak", "None, but can float past obstacles"],
+	"priest": ["Priest", "Moves only on diagonals", "Bad Habit (weak)", "average", "Can rush through a line of enemies, slashing them all"],
+	"golem": ["Golem","Moves up to 4 steps in the 4 non-diagonal directions", "Rocky Rumble (average)", "strong", "Can spit a rock with decent range and damage"],
+	"necro": ["Necromancer", "Unlimited movement in 8 directions", "Dance of Death (strong)", "average", "Can cast a healing spell on units surrounding her"],
+	"iceman": ["Ice Demon", "Moves 1 step in all 8 directions", "Ice Punch (strong)", "strong", "His jump causes a damaging earthquake"]
 };
 
 const COLOURS = [
@@ -551,19 +551,21 @@ var opp = new AI();
 b.placeUnits(1,7);
 b.placeUnits(0,7);
 
-
 // Tools behaviours:
 d.qa("#tools i").forEach(el => {
 	el.addEventListener('mouseover', () => {
-		var txt = TEXT[el.classList[0]];
-		d.q("#toolstip").innerHTML = `
+		var c = el.classList[0],
+			txt = TEXT[c];
+		d.q("#info").innerHTML = `
 			<u>${txt[0]}</u><br>
 			<u>Movement:</u> ${txt[1]}<br>
-			<u>Attack:</u> ${txt[2]}<br>
-			<u>Special:</u> ${txt[3]}
+			<u>Melee Attack:</u> ${txt[2]}<br>
+			<u>Defence:</u> ${txt[3]}<br>
+			<u>Special:</u> ${txt[4]}
+			<i class="${c}"></i>
 		`;
 	});
-	el.addEventListener('mouseout', () => { d.q("#toolstip").innerHTML = ""; });
+	el.addEventListener('mouseout', () => { d.q("#info").innerHTML = ""; });
 	el.addEventListener('click', () => { UI.setMode('place', el.classList[0]); });
 });
 
