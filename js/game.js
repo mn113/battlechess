@@ -2,6 +2,7 @@
 /* eslint-env browser */
 /* eslint-disable eqeqeq, no-sparse-arrays */
 
+// Helpers
 Array.prototype.random = function() {
 	return this[Math.floor(Math.random() * this.length)];
 };
@@ -29,6 +30,12 @@ function arrEq(a1,a2) {
     /* WARNING: arrays must not contain {objects} or behavior may be undefined */
 	return JSON.stringify(a1)==JSON.stringify(a2);
 }
+// element class replacer
+function swapClass(old, nu, el) {
+	el.classList.remove(old);
+	el.classList.add(nu);
+}
+
 
 // Aliases
 var d = document;
@@ -48,14 +55,14 @@ const SPESH = ["💥","🛡️","⛸️","⚫","🔮","💢"];
 //const DIRS = ["⬆️","↗️","➡️","↘️","⬇️","↙️","⬅️","↖️"];
 
 // Text
-const TEXT = {
-	"mine": "Mine. If armed, will detonate when anything steps on it.",
-	"goblin": "Goblin. Can melee attack one square ahead in the direction he is facing.",
-	"fireskull": "Fire Skull. Moves in 2x1 doglegs, jumping over other units to attack its target.",
-	"priest": "Priest. Moves only on diagonals. Continues to where you tell him, regardless of enemies.",
-	"golem": "Golem. Can move in 4 directions (not diagonals), but only 4 steps. Prefers to stay still and use his machine gun.",
-	"necro": "Necromancer. Unlimited movement in 8 directions. Will only kill one enemy per turn.",
-	"iceman": "Ice Man. Heavily armoured, he can move or attack 1 square in 8 directions."
+const TEXT = {	// key : [Name, Movement, Attack, Special]
+	"mine": ["Mineshroom", "None", "Explodes when anything steps on it", "Triggers a big explosion with more damage"],
+	"goblin": ["Goblin", "One step in 4 possible directions.", "Melee (weak)", "Can raise his shield to block 50% of damage"],
+	"fireskull": ["Hothead", "Moves in 2x1 doglegs, 8 possible directions", "Melee (average)", "None, but can float past obstacles"],
+	"priest": ["Priest", "Moves only on diagonals", "Melee (weak)", "Can rush through a line of enemies, slashing them all"],
+	"golem": ["Golem","Moves up to 4 steps in the 4 non-diagonal directions", "Melee (average)", "Can spit a rock with decent range and damage"],
+	"necro": ["Necromancer", "Unlimited movement in 8 directions", "Melee (strong)", "Can cast a healing spell on units surrounding her"],
+	"iceman": ["Ice Demon", "Moves 1 step in all 8 directions", "Melee (strong)", "His jump causes a damaging earthquake"]
 };
 
 const COLOURS = [
@@ -90,11 +97,6 @@ var sounds = {
 		player.play();
 	}
 };
-
-function swapClass(old, nu, el) {
-	el.classList.remove(old);
-	el.classList.add(nu);
-}
 
 // eslint-disable-next-line
 function endTurn() {
@@ -198,8 +200,7 @@ class Unit {
 
 	// Face a given direction:
 	face(dir) {
-		this.el.classList.remove(this.facing);
-		this.el.classList.add(dir);
+		swapClass(this.facing, dir, this.el);
 		this.facing = dir;
 	}
 
@@ -500,7 +501,15 @@ b.placeUnits(0,5);
 
 // Tools behaviours:
 d.qa("#tools i").forEach(el => {
-	el.addEventListener('mouseover', () => { d.q("#toolstip").innerHTML = TEXT[el.classList[0]]; });
+	el.addEventListener('mouseover', () => {
+		var txt = TEXT[el.classList[0]];
+		d.q("#toolstip").innerHTML = `
+			<u>${txt[0]}</u><br>
+			<u>Movement:</u> ${txt[1]}<br>
+			<u>Attack:</u> ${txt[2]}<br>
+			<u>Special:</u> ${txt[3]}
+		`;
+	});
 	el.addEventListener('mouseout', () => { d.q("#toolstip").innerHTML = ""; });
 	el.addEventListener('click', () => { UI.setMode('place', el.classList[0]); });
 });
