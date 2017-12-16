@@ -59,11 +59,14 @@ const TEXT = {
 };
 
 const COLOURS = [
-	"#6B8E23","#7B8E23","#5B8E33","#6B7E13",
+	"#6B8E23","#7B8E23","#5B8E33","#6B7E13"
+];
+const TRANSP = [
 	"rgba(130,180,110,0.7)", "rgba(150,180,110,0.7)", "rgba(130,160,110,0.7)"
 ];
 
-const baseSquad = "mine,mine,iceman,necro,golem,golem,priest,priest,goblin,goblin,goblin,goblin,fireskull,fireskull".split(",");
+const baseSquad = "mine,mine,goblin,goblin,goblin,goblin,fireskull,fireskull,priest,priest,golem,golem,necro,iceman"
+.split(",");
 
 var cells = [];
 var units = [];
@@ -95,7 +98,7 @@ function swapClass(old, nu, el) {
 
 // eslint-disable-next-line
 function endTurn() {
-	Board.unHighlight();
+	b.unHighlight();
 	// AI's turn
 }
 
@@ -132,7 +135,7 @@ class Unit {
 		this.el.addEventListener('mouseover', () => {
 			if (gameMode == 'move') {
 				this.vMoves = this.vMoves || this._validMoves();
-				Board.highlight(this.vMoves);
+				b.highlight(this.vMoves);
 			}
 		});
 		this.el.addEventListener('click', (e) => {
@@ -147,7 +150,7 @@ class Unit {
 			if (gameMode == 'health') this.showHealthBar(this.id, 100);
 		});
 		this.el.addEventListener('mouseout', () => {
-			if (gameMode == 'move') Board.unHighlight();
+			if (gameMode == 'move') b.unHighlight();
 		});
 		return this;
 	}
@@ -213,20 +216,22 @@ class Unit {
 		console.log(angle, dir);
 		this.face(dir);
 
-		if (this.type == 'fireskull') return this._flyTo(dest);
+		if (this.type == 'fireskull') {
+			this._flyTo(dest);
+		}
+		else {
+			// Calculate animation path, must go square by square:
+			var route = b.findRoute([this.x,this.y], dest);
+			console.log(route);
+			// Walk loop:
+			var step = function() {
+				// If enemy, fight him
 
-		// Calculate animation path, must go square by square:
-		var route = Board.findRoute([this.x,this.y], dest);
-		console.log(route);
-		// Walk loop:
-		var step = function() {
-			// If enemy, fight him
-
-			// TODO
-			if (route.length > 0) this._stepTo(route.shift(), step);
-		}.bind(this);
-		step();
-
+				// TODO
+				if (route.length > 0) this._stepTo(route.shift(), step);
+			}.bind(this);
+			step();
+		}
 		// Done
 		this.vMoves = this._validMoves();
 		this.face(this.team == 0 ? 'ss' : 'nn');
@@ -281,7 +286,7 @@ class Unit {
 
 	target(x,y) {
 		this.targeting = [x,y];
-		Board.markCell(x,y, 'targeted');
+		b.markCell(x,y, 'targeted');
 	}
 
 	attack(point) {
@@ -344,12 +349,16 @@ class Board {
 					div.classList.add('team0spawn');
 				else if (x > width - 6 && y > height - 6)
 					div.classList.add('team1spawn');
-				else if (Math.random() > 0.5)
-					div.innerHTML = `<b id="tree${guid++}">${PLANTS.random()}</b>`;
+				else {
+					div.style.background = TRANSP.random();
+					if (Math.random() > 0.5) {
+						div.innerHTML = `<b id="tree${guid++}">${PLANTS.random()}</b>`;
+						div.style.background = COLOURS.random();
+					}
+				}
 
 				div.style.zIndex = x + y;	// (0,0) will be furthest away square
 				// Apply random colour change to each cell:
-				div.style.background = COLOURS.random();
 				cells.push([x,y]);
 			}
 		}
@@ -502,7 +511,7 @@ live('.valid', 'click', (evt) => {
 	selectedUnit.moveTo(unwrap(evt.target.id));
 	selectedUnit = null;
 	UI.setMode();
-	Board.unHighlight();
+	b.unHighlight();
 	console.log('done');
 });
 live('.team0spawn', 'click', (evt) => {
