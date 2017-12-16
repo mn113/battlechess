@@ -46,6 +46,7 @@ d.b = d.body;
 d.b.c = d.b.classList;
 var $ga = d.q("#ga");
 
+
 // Unicode icons:
 //const PIECES = ["🤖","👻","😈","👹","🦄","🐲","🐍","💣","🕸️","🏂"];
 const PLANTS = ["🎄","🌲","🌳","🌵"];
@@ -58,7 +59,7 @@ const SPESH = ["💥","🛡️","⛸️","⚫","🔮","💢"];
 const TEXT = {	// key : [Name, Movement, Attack, Special]
 	"mine": ["Mineshroom", "None", "Explodes when stepped on", "N/A", "Triggers a big explosion with more damage"],
 	"qoblin": ["Goblin", "One step in 4 possible directions.", "Fisticuffs (weak)", "weak", "Can raise his shield to block 50% of damage"],
-	"fireskull": ["Hothead", "Moves in 2x1 doglegs, 8 possible directions", "Fiery Bite (average)", "weak", "None, but can float past obstacles"],
+	"fireskull": ["Hothead", "Moves in 2x1 dog-legs, 8 possible directions", "Fiery Bite (average)", "weak", "None, but can float past obstacles"],
 	"priest": ["Priest", "Moves only on diagonals", "Bad Habit (weak)", "average", "Can rush through a line of enemies, slashing them all"],
 	"golem": ["Golem","Moves up to 4 steps in the 4 non-diagonal directions", "Rocky Rumble (average)", "strong", "Can spit a rock with decent range and damage"],
 	"necro": ["Necromancer", "Unlimited movement in 8 directions", "Dance of Death (strong)", "average", "Can cast a healing spell on units surrounding her"],
@@ -71,6 +72,7 @@ const COLOURS = [
 const TRANSP = [
 	"rgba(130,180,110,0.7)", "rgba(150,180,110,0.7)", "rgba(130,160,110,0.7)"
 ];
+
 
 const baseSquad = "mine,mine,qoblin,qoblin,qoblin,qoblin,fireskull,fireskull,priest,priest,golem,golem,necro,iceman"
 .split(",");
@@ -249,18 +251,20 @@ class Unit {
 			console.log(route);
 			// Walk loop:
 			var step = function() {
-				// Check next cell, who is there?
-				var nextCell = route.shift(),
-					obstIds = b.at(nextCell),
-					obsts = obstIds.map(id => units.find(u => u.id == id)).filter(o => typeof o == 'object');
-				console.log(nextCell, obsts);
+				if (route.length > 0) {
+					// Check next cell, who is there?
+					var nextCell = route.shift(),
+						obstIds = b.at(nextCell),
+						obsts = obstIds.map(id => units.find(u => u.id == id)).filter(o => typeof o == 'object');
+					console.log(nextCell, obsts);
 
-				if (obsts.some(o => o.team === this.team)) {
-					// path blocked
-					console.log("blocked at", nextCell);
-					return;
+					if (obsts.some(o => o.team === this.team)) {
+						// path blocked
+						console.log("blocked at", nextCell);
+						return;
+					}
+					else this._stepTo(nextCell, step);
 				}
-				else if (route.length > 0) this._stepTo(nextCell, step);
 			}.bind(this);
 			step();
 		}

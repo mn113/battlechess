@@ -66,7 +66,7 @@ body > p > canvas {
 	top: 50px;
 	left: 5px;
 	color: #fff;
-	border: 1px dotted fuchsia;
+	xborder: 1px dotted fuchsia;
 }
 #info i {
 	transform: scale(8);
