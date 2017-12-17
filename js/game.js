@@ -139,12 +139,13 @@ class Unit {
 		this.el.classList.add(this.facing);
 		if (team === 0) this._addEventListeners();
 		// Register:
-		units.push(this);
-		depots[this.team].push(this);
-		// To board:
-		if (x !== null && y !== null) this.placeAt([x,y]);
-		this.vMoves = false;
-
+		if (typeof team == 'number') {
+			units.push(this);
+			depots[this.team].push(this);
+			// To board:
+			if (x !== null && y !== null) this.placeAt([x,y]);
+			this.vMoves = false;
+		}
 		return this;
 	}
 
@@ -378,8 +379,9 @@ class Unit {
 		this.fx('flash');
 		sounds.play('hurt');
 		this.showHealthBar();
-		// Death?
-		st(() => { if (this.hp < 0) this.remove(); }, 750);
+		// Death if too low, maxed if too high:
+		if (this.hp < 0) st(() => { this.remove(); }, 750);
+		else if (this.hp > this.def) this.hp == this.def;
 	}
 
 	// NOTE: obsolete method?
@@ -428,6 +430,34 @@ class Unit {
 			this.el.classList.remove(name);
 			if (cb) cb();
 		}, t);
+	}
+
+	doSpecial(target) {
+		switch(this.type) {
+			case 'mine':
+				// BIG boom 3x3 instant
+				sounds.play('timer');
+				this.fx('grow', 1000, () => {
+					this.explode();
+					b.damage3x3([this.x,this.y], 6);
+				});
+				break;
+			case 'qoblin':
+				// add shield class
+				break;
+			case 'priest':
+				// moveTo(target), special exemption
+				break;
+			case 'golem':
+				// spit rock to target - requires validmoves & targeting cursor
+				break;
+			case 'necro':
+				// healing spell 3x3 instant
+				break;
+			case 'iceman':
+				// jump stomp 3x3 instant
+				break;
+		}
 	}
 
 }
@@ -530,6 +560,22 @@ class Board {
 		});
 	}
 
+	damage3x3(centre, hurt) {
+		// Find 9 cells:
+		var area = new Unit('iceman', null, centre[0], centre[1])._validMoves();
+		// Damage them all:
+		for (var sq of area) b.damageCell(sq, hurt);
+	}
+
+	damageCell(point, hurt) {
+		// Find occupants:
+		var ids = b.at(point);
+		console.log(ids);
+		// Find units, damage them:
+		ids.filter(id => !id.startsWith('tree'))
+		.map(id => units.find(u => u.id == id).hurt(hurt));
+	}
+
 }
 
 
@@ -605,6 +651,7 @@ d.qa("#tools i").forEach(el => {
 	el.addEventListener('mouseout', () => { d.q("#info").innerHTML = ""; });
 	el.addEventListener('click', () => {
 		sounds.play('click');
+		if (el.classList.contains('disabled')) return;
 		var type = el.classList[0];
 		UI.setMode('place-'+type);
 		selectedUnit = depots[0].filter(u => u.type == type)[0];

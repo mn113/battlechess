@@ -60,7 +60,6 @@ body > p > canvas {
 }
 .disabled {
 	filter: grayscale();
-	pointer-events: none;
 }
 #tools data {
 	position: absolute;
