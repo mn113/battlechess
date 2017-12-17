@@ -36,7 +36,6 @@ function swapClass(old, nu, el) {
 	el.classList.add(nu);
 }
 
-
 // Aliases
 var d = document;
 d.e = d.createElement;
@@ -45,6 +44,7 @@ d.qa = d.querySelectorAll;
 d.b = d.body;
 d.b.c = d.b.classList;
 var $ga = d.q("#ga");
+var st = setTimeout;
 
 
 // Unicode icons:
@@ -88,11 +88,16 @@ var myTurn = 1;
 // Sounds
 var sounds = {
 	click: "1,,0.22,0.46,,0.9,0.86,-0.6,-1,-0.6681,,-1,,,-1,,-0.0014,0.1729,0.95,0.8999,,,0.2367,0.5",
-	move: "2,0.26,0.69,0.1216,0.39,0.31,,-0.0999,0.0099,0.79,0.3,-0.949,-0.6922,0.5664,0.23,0.6269,-0.2367,0.2199,0.9831,0.7356,0.3795,0.0111,,0.5",
+	move: "1,0.59,0.35,0.668,0.23,0.18,0.06,-0.16,-0.2199,0.8737,0.4244,-0.1009,0.0259,0.5304,-0.0402,0.4732,0.3296,0.2235,0.8581,-0.38,0.0049,0.0367,-0.0439,0.5",
+	fly: "3,0.99,0.58,0.3,1,0.69,0.3924,0.02,0.02,,,-0.18,,,-0.0116,0.92,-0.2199,0.56,0.9994,-0.1999,0.5882,0.1433,-0.0205,0.5",
 	slash: "1,,0.0648,,0.2896,0.5191,,-0.3743,,,,,,,,,,,1,,,0.0127,,0.5",
+	slash2: "1,0.08,0.24,0.33,0.17,0.69,0.39,-0.2199,-0.0554,0.0247,0.0023,,,0.266,0.017,,-0.0534,0.0995,1,-0.0799,0.03,0.91,0.12,0.5",
 	shoot: "",
+	hurt: "1,,0.0704,,0.1996,0.5761,,-0.4487,,,,,,,,,,,1,,,,,0.5",
 	explode: "3,.07,.43,.29,.48,.179,,-.26,,,,,,,,,.1895,.16,1,,,,,.5",
-	spawn: "0,0.41,0.35,0.26,0.37,0.54,,-0.62,0.3999,,,-0.4885,,0.29,0.0735,0.8163,0.043,,0.9,0.4399,0.39,0.15,0.813,0.5",
+	timer: "0,0.08,0.41,0.5,0.53,0.46,,0.78,0.96,,,,,,,0.61,,,0.33,0.6399,,0.93,0.6799,0.5",
+	spawn: "0,0.51,0.12,,0.58,0.68,0.41,-0.4599,0.74,,,0.06,,0.29,0.0735,0.8,-0.14,0.26,0.9,0.4399,0.39,0.15,0.813,0.5",
+	reverse: "0,0.1074,0.2,,0.3412,0.903,0.106,-0.3157,,,,,,0.85,-0.435,0.3178,0.2343,-0.4811,0.95,-0.18,0.7763,0.4521,-0.0117,0.5",
 
 	play: function(name) {
 		var player = new Audio();
@@ -155,6 +160,7 @@ class Unit {
 		});
 		this.el.addEventListener('click', (e) => {
 			e.stopPropagation();
+			sounds.play('click');
 			if (gameMode == 'rotate') this.rotate();
 			if (gameMode == 'move') {
 				// Highlight the valid cells we can move to:
@@ -203,7 +209,6 @@ class Unit {
 		var [x,y] = point;
 		d.q("#x"+x+"y"+y).appendChild(this.el);
 		this.el.style.opacity = 1;
-		sounds.play('spawn');
 		this.x = x;
 		this.y = y;
 		depots[this.team].splice(depots[this.team].indexOf(this),1);
@@ -243,6 +248,7 @@ class Unit {
 		this.face(dir);
 
 		if (this.type == 'fireskull') {
+			sounds.play('fly');
 			this._flyTo(dest);
 		}
 		else {
@@ -336,12 +342,16 @@ class Unit {
 		// Reversal?
 		if (Math.random() > 0.83) {
 			this.hp -= att2;
+			this.fx('flash');
+			sounds.play('reverse');
 			this.showHealthBar();
 			// Death?
 			setTimeout(() => { if (this.hp < 0) this.remove(); }, 750);
 		}
 		else {
 			enemy.hp -= att1;
+			enemy.fx('flash');
+			sounds.play('hurt');
 			enemy.showHealthBar();
 			// Death?
 			setTimeout(() => { if (enemy.hp < 0) enemy.remove(); }, 750);
@@ -375,19 +385,26 @@ class Unit {
 	}
 
 	explode() {
-		// Animate blur
-		this.el.classList.add('exploding');
 		sounds.play('explode');
-		setTimeout(() => {
+		// CSS animation for blur
+		this.fx('exploding', 900, () => {
 			this.remove();
-			this.el.classList.remove('exploding');
-		}, 900);
+		});
 	}
 
 	remove() {
 		d.q('#depot').appendChild(this.el);
 		depots[this.team].push(this);
 	}
+
+	fx(name, t=1000, cb) {
+		this.el.classList.add(name);
+		st(() => {
+			this.el.classList.remove(name);
+			if (cb) cb();
+		}, t);
+	}
+
 }
 
 
@@ -570,11 +587,15 @@ d.qa("#tools i").forEach(el => {
 		`;
 	});
 	el.addEventListener('mouseout', () => { d.q("#info").innerHTML = ""; });
-	el.addEventListener('click', () => { UI.setMode('place', el.classList[0]); });
+	el.addEventListener('click', () => {
+		sounds.play('click');
+		UI.setMode('place', el.classList[0]);
+	});
 });
 
 // Behaviours on cells:
 live('.valid', 'click', (evt) => {
+	sounds.play('click');
 	var tid = (evt.target.id.startsWith('x')) ? evt.target.id : evt.target.parentNode.id;
 	console.log(selectedUnit.id, 'directed to', tid);
 	selectedUnit.moveTo(unwrap(tid));
@@ -583,8 +604,9 @@ live('.valid', 'click', (evt) => {
 	b.unHighlight();
 });
 live('.team0spawn', 'click', (evt) => {
+	sounds.play('click');
 	if (gameMode.startsWith('place-')) {
-		// Check spawn validity:
+		sounds.play('spawn');
 		selectedUnit.placeAt(unwrap(evt.target.id));
 		selectedUnit = null;
 		UI.setMode();
