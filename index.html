@@ -10,6 +10,7 @@
 	</style>
 </head>
 <body>
+	<span id="mode"></span>
 	<ul id="tools">
 		<li><i class="mine"></i><data></data></li>
 		<li><i class="qoblin"></i><data></data></li>
@@ -19,9 +20,11 @@
 		<li><i class="necro"></i><data></data></li>
 		<li><i class="iceman"></i><data></data></li>
 		<!--a id="rot" onclick="UI.setMode('rotate')">ROT</a-->
-		<a id="mov" onclick="UI.setMode('move')">MOV</a>
-		<a id="arm" onclick="UI.setMode('arm')">ARM<br>(1,2,3)</a>
-		<a id="mov" onclick="UI.setMode('explode')">💣</a>
+		<!--a id="mov" onclick="UI.setMode('move')">MOV</a-->
+		<!--a id="arm" onclick="UI.setMode('arm')">ARM<br>(1,2,3)</a-->
+		<!--a id="mov" onclick="UI.setMode('explode')">💣</a-->
+		<a id="moves">MOVES = <data>3</date></a>
+		<a id="spesh" onclick="UI.setMode('spesh')">SPECIAL</a>
 		<a id="end" onclick="endTurn()">DONE</a>
 	</ul>
 	<p id="info"></p>
@@ -41,7 +44,7 @@
 </html>
 <!--
 TODO
-	anim: jiggle, shrink?
+	anim: jiggle, shrink?, jump
 anim: different walk speeds
 anim: fireball
 attacking effect/frame
@@ -49,7 +52,7 @@ tool: 3 place, 3 move, 3 special
 ui: toolbox countdown circle
 sfx: prevent many
 sfx: different walks
-sfx: mine ticker, fireskull, golem, necro, iceman, priest, necro
+sfx: mine ticker, fireskull, golem, necro, iceman, priest, necro, jump, jand
 gfx: back-and-forth turns thing
 sprites: golem & goblin should face se/ne only -> more complex orientation
 utf8 powerups, potions

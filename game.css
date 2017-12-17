@@ -20,6 +20,12 @@ body > p > canvas {
 #depot {
 	display: none;
 }
+#mode {
+	position: absolute;
+	top: 0;
+	right: 0;
+	color: white;
+}
 
 
 /************/
@@ -178,6 +184,15 @@ div:hover > i.team1 {
 	filter: brightness(1.25)
 			drop-shadow(1px 1px 0 #ff0)
 			drop-shadow(-1px -1px 0 #ff0)
+			hue-rotate(180deg);
+}
+i.special {
+	filter: drop-shadow(1px 1px 0 #fff)
+			drop-shadow(-1px -1px 0 #fff);
+}
+i.special.team1 {
+	filter: drop-shadow(1px 1px 0 #fff)
+			drop-shadow(-1px -1px 0 #fff)
 			hue-rotate(180deg);
 }
 .team1 {

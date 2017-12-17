@@ -74,13 +74,12 @@ const TRANSP = [
 ];
 
 
-const baseSquad = "mine,mine,qoblin,qoblin,qoblin,qoblin,fireskull,fireskull,priest,priest,golem,golem,necro,iceman"
-.split(",");
+const baseSquad = "mine,mine,qoblin,qoblin,qoblin,qoblin,fireskull,fireskull,priest,priest,golem,golem,necro,iceman".split(",");
 
 var cells = [];
 var units = [];
-var gameMode = null;	// place, move, spesh, ai
-var selectedUnit = null;
+var gameMode;		// place-, move-, spesh, ai
+var selectedUnit;
 var depots = {0: [], 1: []};
 var guid = 0;
 var myTurn = 1;
@@ -153,25 +152,29 @@ class Unit {
 	_addEventListeners() {
 		// Add interaction behaviours:
 		this.el.addEventListener('mouseover', () => {
-			if (gameMode == 'move') {
-				this.vMoves = this.vMoves || this._validMoves();
-				b.highlight(this.vMoves);
+			if (gameMode == 'move-'+this.id) {
+				//this.vMoves = this.vMoves || this._validMoves();
+				//b.highlight(this.vMoves);
 			}
 		});
+
 		this.el.addEventListener('click', (e) => {
 			e.stopPropagation();
 			sounds.play('click');
 			if (gameMode == 'rotate') this.rotate();
-			if (gameMode == 'move') {
+			if (gameMode == 'move-'+this.id) this.rotate();
+			else {
 				// Highlight the valid cells we can move to:
 				selectedUnit = this;
-				UI.setMode('move-'+this.id);	// causes highlight to remain
+				UI.setMode('move-'+this.id);
+				this.vMoves = this.vMoves || this._validMoves();
+				b.highlight(this.vMoves);
+				this.showHealthBar();
 			}
-			if (gameMode == 'explode') this.explode();
-			if (gameMode == 'health') this.showHealthBar(this.id, 100);
 		});
+
 		this.el.addEventListener('mouseout', () => {
-			if (gameMode == 'move') b.unHighlight();
+			//if (gameMode == 'move-'+this.id) b.unHighlight();
 		});
 		return this;
 	}
@@ -241,6 +244,7 @@ class Unit {
 		}
 
 		// Done
+		b.unHighlight();
 		this.vMoves = this._validMoves();
 		return this;
 	}
@@ -291,9 +295,12 @@ class Unit {
 			}.bind(this);
 			step();
 		}
-		// Done
+		// Done		// BUG: CODE NEVER REACHED?
+		UI.setMode();
+		b.unHighlight();
 		this.vMoves = this._validMoves();
 		this.face(this.team == 0 ? 'ss' : 'nn');
+		console.log('Done with moveTo');
 		return this;
 	}
 
@@ -389,6 +396,7 @@ class Unit {
 	}
 
 	showHealthBar() {
+		if (this.type == 'mine') return;
 		var pct = 25 * Math.ceil(4 * this.hp / this.def);		// limit percentages to 25,50,75,100
 		console.log(this.id, this.hp, pct);
 		var $bar = d.e("figure");
@@ -495,7 +503,7 @@ class Board {
 		// Normalise:		// [5,-5]	=> [1,-1]
 		if (dx !== 0) dx /= Math.abs(dx);
 		if (dy !== 0) dy /= Math.abs(dy);
-		console.log(dx, dy);	// -1, 0, 1
+		//console.log(dx, dy);	// -1, 0, 1
 		// Increment:
 		while (!arrEq(a,z)) {
 			a[0] += dx;
@@ -545,25 +553,15 @@ class UI {
 		});
 	}
 
-	static setMode(mode, piece="") {
+	static setMode(mode) {
+		console.info('setMode(',mode,')');
+		// Clear all classes:
 		while (d.b.c.length > 0) d.b.c.remove(d.b.c[0]);
-		if (!mode) return;
-		/* Possible modes:
-		place-[type]
-		rotate
-		move
-		move-[id]
-		arm
-		'' (to clear mode)
-		*/
-		if (mode == 'place') {
-			mode += "-"+piece;
-			selectedUnit = depots[0].filter(u => u.type == piece)[0];
-		}
-		d.b.c.add(mode);
-		console.log(mode);
 		gameMode = mode;
-		//messaging.clearMessages();
+		// Add the new class:
+		if (mode) d.b.c.add(mode);
+		d.q("#mode").innerHTML = mode || "";
+		b.unHighlight();
 	}
 }
 
@@ -582,12 +580,13 @@ class AI {
 var b = new Board(11);
 // Team 0's players:
 for (var t of baseSquad) new Unit(t,0);
-// Update:
-UI.drawTools();
-// AI:
+// AI's players:
 var opp = new AI();
 b.placeUnits(1,7);
 b.placeUnits(0,7);
+// Update:
+UI.drawTools();
+
 
 // Tools behaviours:
 d.qa("#tools i").forEach(el => {
@@ -606,7 +605,9 @@ d.qa("#tools i").forEach(el => {
 	el.addEventListener('mouseout', () => { d.q("#info").innerHTML = ""; });
 	el.addEventListener('click', () => {
 		sounds.play('click');
-		UI.setMode('place', el.classList[0]);
+		var type = el.classList[0];
+		UI.setMode('place-'+type);
+		selectedUnit = depots[0].filter(u => u.type == type)[0];
 	});
 });
 
@@ -629,6 +630,11 @@ live('.team0spawn', 'click', (evt) => {
 		UI.setMode();
 		UI.drawTools();
 	}
+});
+// Unset mode every time non-unit clicked:
+live('#ga', 'click', () => {
+	console.log('top-level mode unset');
+	UI.setMode();
 });
 
 // Text
