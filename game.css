@@ -304,9 +304,11 @@ i figure:after { /* health bar contents */
 	left: 2px;
 	bottom: 2px;
 	height: 2px;
-	width: 50%;
 }
 i figure.p25:after { width: 25%; background: orange; }
 i figure.p50:after { width: 50%; background: yellow; }
 i figure.p75:after { width: 75%; background: lawngreen; }
-i figure.p100:after { width: 100%; background: green; }
+i figure.p100:after { width: 95%; background: green; }
+i.team1 figure:after {
+	filter: hue-rotate(180deg);
+}

@@ -205,22 +205,39 @@ class Unit {
 	}
 
 	// Put unit in board square. Also check how to handle what is there:
-	placeAt(point) {
+	placeAt(point, spawned=false) {
 		var [x,y] = point;
-		d.q("#x"+x+"y"+y).appendChild(this.el);
+		var sqr = d.q("#x"+x+"y"+y);
+		sqr.appendChild(this.el);
 		this.el.style.opacity = 1;
 		this.x = x;
 		this.y = y;
-		depots[this.team].splice(depots[this.team].indexOf(this),1);
 
-		// What is here?
-		var obstIds = b.at(point),
-			obsts = obstIds.map(id => units.find(u => u.id == id)).filter(o => typeof o == 'object');
-		console.log(point, obsts);
-		if (obsts.some(o => o.team !== this.team)) {
-			// FIGHT!
-			console.log("fight at", point, "vs", obsts);
-			this.melee(obsts[0]);
+		if (spawned) {
+			depots[this.team].splice(depots[this.team].indexOf(this),1);
+		}
+		else {
+			// Kill tree:
+			if (sqr.firstChild && sqr.firstChild.id.startsWith('tree')) sqr.firstChild.remove();
+
+			// What is here?
+			var obstIds = b.at(point),
+				obsts = obstIds
+				.map(id => units.find(u => u.id == id))
+				.filter(o => typeof o == 'object');
+			console.log(point, obsts);
+			// Mines go boom:
+			if (obsts.some(o => o.type == 'mine') && this.type !== 'qoblin') {
+				var mine = obsts.filter(o => o.type == 'mine')[0];
+				mine.explode(1);
+				this.hurt(mine.att);
+			}
+			// Fight the enemy:
+			if (obsts.some(o => o.team !== this.team)) {
+				console.log("fight at", point, "vs", obsts);
+				var enemy = obsts.filter(o => o.team !== this.team)[0];
+				this.melee(enemy);
+			}
 		}
 
 		// Done
@@ -341,21 +358,21 @@ class Unit {
 
 		// Reversal?
 		if (Math.random() > 0.83) {
-			this.hp -= att2;
-			this.fx('flash');
 			sounds.play('reverse');
-			this.showHealthBar();
-			// Death?
-			setTimeout(() => { if (this.hp < 0) this.remove(); }, 750);
+			this.hurt(att2);
 		}
 		else {
-			enemy.hp -= att1;
-			enemy.fx('flash');
-			sounds.play('hurt');
-			enemy.showHealthBar();
-			// Death?
-			setTimeout(() => { if (enemy.hp < 0) enemy.remove(); }, 750);
+			enemy.hurt(att1);
 		}
+	}
+
+	hurt(amount) {
+		this.hp -= amount;
+		this.fx('flash');
+		sounds.play('hurt');
+		this.showHealthBar();
+		// Death?
+		st(() => { if (this.hp < 0) this.remove(); }, 750);
 	}
 
 	// NOTE: obsolete method?
@@ -379,9 +396,9 @@ class Unit {
 		$bar.innerHTML = this.id + " p" + pct;
 		this.el.appendChild($bar);
 
-		setTimeout(function() {
+		st(function() {
 			$bar.remove();
-		}, 1500);
+		}, 1750);
 	}
 
 	explode() {
@@ -501,7 +518,7 @@ class Board {
 				var xy = unwrap(Array.from(spawns.values()).random().id);
 			} while (b.at(xy).length > 0);
 			// Place unit:
-			u.placeAt(xy);
+			u.placeAt(xy, true);
 		});
 	}
 
@@ -607,7 +624,7 @@ live('.team0spawn', 'click', (evt) => {
 	sounds.play('click');
 	if (gameMode.startsWith('place-')) {
 		sounds.play('spawn');
-		selectedUnit.placeAt(unwrap(evt.target.id));
+		selectedUnit.placeAt(unwrap(evt.target.id), true);
 		selectedUnit = null;
 		UI.setMode();
 		UI.drawTools();
