@@ -60,6 +60,7 @@ body > p > canvas {
 }
 .disabled {
 	filter: grayscale();
+	cursor: not-allowed;
 }
 #tools data {
 	position: absolute;
@@ -164,109 +165,119 @@ i,b {
 	font-style: normal;
 	transform-origin: center bottom;
 	transform: rotateZ(-45deg) rotateY(60deg) translateX(50%) translateY(25%) scale(4);
-	image-rendering: pixelated;
-	filter: hue-rotate(0);
 }
 b {
 	transform: rotateZ(-45deg) rotateY(60deg) scale(5) translateX(13px) translateY(11px);
 	filter: hue-rotate(30deg);
 	pointer-events: none;
 }
-i:hover,
-div:hover > i {
+i > s {
+	display: block;
+	width: 32px;
+	height: 32px;
+	image-rendering: pixelated;
+	pointer-events: none;	/* all clicks handled by parent */
+}
+i:hover {
 	filter: brightness(1.25)
 			drop-shadow(1px 1px 0 #ff0)
 			drop-shadow(-1px -1px 0 #ff0);
-}
-i.team1:hover,
-div:hover > i.team1 {
-	filter: brightness(1.25)
-			drop-shadow(1px 1px 0 #ff0)
-			drop-shadow(-1px -1px 0 #ff0)
-			hue-rotate(180deg);
 }
 i.special {
 	filter: drop-shadow(1px 1px 0 #fff)
 			drop-shadow(-1px -1px 0 #fff);
 }
-i.special.team1 {
-	filter: drop-shadow(1px 1px 0 #fff)
-			drop-shadow(-1px -1px 0 #fff)
-			hue-rotate(180deg);
-}
-.team1 {
+.team1 s {
 	filter: hue-rotate(180deg);
 }
 
-.mine {
+.mine s {
 	background: url(img/mush.gif) no-repeat;
 	width: 16px;
 	height: 16px;
+	margin: 12px 8px 4px;
 }
-.qoblin {
+.qoblin s {
 	background: url(img/goblins.gif) no-repeat;
 	width: 18px;
 	height: 24px;
+	margin: 4px 7px;
 }
-.fireskull {
+.fireskull s {
 	background: url(img/hotheads.gif) no-repeat;
 	width: 18px;
 	height: 32px;
+	margin: 0 7px;
 	xanimation: vertbob 1.5s infinite;
 }
-.priest {
+.priest s {
 	background: url(img/priests.gif) no-repeat;
 	width: 24px;
 	height: 32px;
+	margin: 0 4px;
 }
-.golem {
+.golem s {
 	background: url(img/golems.gif) no-repeat;
 	width: 26px;
 	height: 32px;
+	margin: 0 3px;
 }
-.necro {
+.necro s {
 	background: url(img/necros.gif) no-repeat;
 	width: 32px;
 	height: 32px;
 }
-.iceman {
+.iceman s {
 	background: url(img/icemen.gif) no-repeat;
 	width: 34px;
 	height: 34px;
 }
-.ss { background-position: 0 0; }		/* default */
-.sw {}
-.ww {
+
+.ss s { background-position: 0 0; }		/* default */
+.sw s {}
+.ww s {
 	background-position: 0 100%;
-	transform: rotateZ(-45deg) rotateY(60deg) translateX(50%) translateY(25%) scaleX(-4) scaleY(4);
+	transform: scaleX(-1);
 }
-.nw {}
-.nn { background-position: 0 50%; }
-.ne {}
-.ee { background-position: 0 100%; }
-.se {}
+.nw s {}
+.nn s { background-position: 0 50%; }
+.ne s {}
+.ee s { background-position: 0 100%; }
+.se s {}
 
 @keyframes vertbob {
 	50% { padding-bottom: 3px; }
 }
-.jiggle { animation: jiggle 0.5s 3 alternate; }
+.jiggle { animation: jiggle 0.33s 3 alternate; }
 @keyframes jiggle {
-	0% { transform: translate(4px,3px); }
-	17% { transform: translate(1px,4px); }
-	33% { transform: translate(3px,2px); }
-	50% { transform: translate(2px,5px); }
-	67% { transform: translate(4px,1px); }
-	83% { transform: translate(1px,3px); }
+	17% { transform: translate(0px,4px); }
+	33% { transform: translate(-3px,4px); }
+	50% { transform: translate(3px,-4px); }
+	67% { transform: translate(-3px,-4px); }
+	83% { transform: translate(3px,4px); }
 }
-.flash { animation: 0.6s 3 flash; }
+.flash s { animation: 0.6s 3 flash; }
 @keyframes flash {
 	50% { opacity: 0.2; }
 }
-.explode { animation: 1s 1 explode; }
+.explode s { animation: 1s 1 explode; }
 @keyframes explode {
 	0%   { filter: blur(0px); }
 	100% { filter: blur(20px); }
 }
+.jump s { animation: 1.2s 1 jump; transform-origin: bottom; }
+@keyframes jump {
+	0%,  99% { transform: translateY(0) scaleY(1); }
+	15%, 90% { transform: translateY(0) scaleY(0.8); }
+	25%, 80% { transform: translateY(-6px) scaleY(1); }
+	40%, 60% { transform: translateY(-9px); }
+	50%		 { transform: translateY(-11px); }
+}
+.grow s { animation: 0.8s 1 grow; }
+@keyframes grow {
+	100% 	 { transform: scale(2); }
+}
+
 
 .move { cursor: move; }
 .place-mine,

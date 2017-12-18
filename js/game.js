@@ -32,8 +32,8 @@ function arrEq(a1,a2) {
 }
 // element class replacer
 function swapClass(old, nu, el) {
-	el.classList.remove(old);
-	el.classList.add(nu);
+	el[C].remove(old);
+	el[C].add(nu);
 }
 
 // Aliases
@@ -45,7 +45,7 @@ d.b = d.body;
 d.b.c = d.b.classList;
 var $ga = d.q("#ga");
 var st = setTimeout;
-
+var C = 'classList';
 
 // Unicode icons:
 //const PIECES = ["🤖","👻","😈","👹","🦄","🐲","🐍","💣","🕸️","🏂"];
@@ -53,7 +53,6 @@ const PLANTS = ["🎄","🌲","🌳","🌵"];
 //const WEAP = ["🔪","🗡️","🔫","⛏️"];
 const SPESH = ["💥","🛡️","⛸️","⚫","🔮","💢"];
 //const FX = [,"🔥"];
-//const DIRS = ["⬆️","↗️","➡️","↘️","⬇️","↙️","⬅️","↖️"];
 
 // Text
 const TEXT = {	// key : [Name, Movement, Attack, Special]
@@ -93,7 +92,7 @@ var sounds = {
 	slash2: "1,0.08,0.24,0.33,0.17,0.69,0.39,-0.2199,-0.0554,0.0247,0.0023,,,0.266,0.017,,-0.0534,0.0995,1,-0.0799,0.03,0.91,0.12,0.5",
 	shoot: "",
 	hurt: "1,,0.0704,,0.1996,0.5761,,-0.4487,,,,,,,,,,,1,,,,,0.5",
-	explode: "3,.07,.43,.29,.48,.179,,-.26,,,,,,,,,.1895,.16,1,,,,,.5",
+	boom: "3,.07,.43,.29,.48,.179,,-.26,,,,,,,,,.1895,.16,1,,,,,.5",
 	timer: "0,0.08,0.41,0.5,0.53,0.46,,0.78,0.96,,,,,,,0.61,,,0.33,0.6399,,0.93,0.6799,0.5",
 	spawn: "0,0.51,0.12,,0.58,0.68,0.41,-0.4599,0.74,,,0.06,,0.29,0.0735,0.8,-0.14,0.26,0.9,0.4399,0.39,0.15,0.813,0.5",
 	reverse: "0,0.1074,0.2,,0.3412,0.903,0.106,-0.3157,,,,,,0.85,-0.435,0.3178,0.2343,-0.4811,0.95,-0.18,0.7763,0.4521,-0.0117,0.5",
@@ -133,10 +132,12 @@ class Unit {
 		this.hp = this.def = {m:0,q:5,f:5,p:6,g:9,n:7,i:10}[c];
 		// DOM element:
 		this.el = d.e('i');
+		this.inner = d.e('s');	// for fx transforms
+		this.el.appendChild(this.inner);
 		this.el.setAttribute("id", this.id);
-		this.el.classList.add(type);
-		this.el.classList.add('team'+team);
-		this.el.classList.add(this.facing);
+		this.el[C].add(type);
+		this.el[C].add('team'+team);
+		this.el[C].add(this.facing);
 		if (team === 0) this._addEventListeners();
 		// Register:
 		if (typeof team == 'number') {
@@ -250,6 +251,16 @@ class Unit {
 		return this;
 	}
 
+	rotate() {
+		if (this.type == 'mine') return;
+		var seq = ['ss','ww','nn','ee'];
+		var old = this.facing;
+		var nu = seq[(seq.indexOf(old) + 1) % 4];
+		this.face(nu);
+		sounds.play('click');
+		return this;
+	}
+
 	// Face a given direction:
 	face(dir) {
 		swapClass(this.facing, dir, this.el);
@@ -343,17 +354,13 @@ class Unit {
 	// Clone the element to the animation layer, so it can move freely
 	// around the board before returning to a square:
 	_cloneToAnim() {
-		var clone = this.el.cloneNode();
+		var clone = this.el.cloneNode(true);
+		clone.id += 'c';
 		d.q("#animLayer").appendChild(clone);
 		clone.style.left = (this.x + 0.5) * 50 + "px";
 		clone.style.top = (this.y + 0.5) * 50 + "px";
 		this.el.style.opacity = 0; // hide original
 		return clone;
-	}
-
-	target(x,y) {
-		this.targeting = [x,y];
-		b.markCell(x,y, 'targeted');
 	}
 
 	melee(enemy) {
@@ -384,25 +391,11 @@ class Unit {
 		else if (this.hp > this.def) this.hp == this.def;
 	}
 
-	// NOTE: obsolete method?
-	rotate() {
-		if (this.type == 'mine') return;
-		var seq = ['ss','ww','nn','ee'];
-		var old = this.facing;
-		var nu = seq[(seq.indexOf(old) + 1) % 4];
-		console.log(nu);
-		swapClass(old, nu, this.el);
-		sounds.play('click');
-		this.facing = nu;
-		return this;
-	}
-
 	showHealthBar() {
 		if (this.type == 'mine') return;
 		var pct = 25 * Math.ceil(4 * this.hp / this.def);		// limit percentages to 25,50,75,100
-		console.log(this.id, this.hp, pct);
 		var $bar = d.e("figure");
-		$bar.classList.add('p'+pct);
+		$bar[C].add('p'+pct);
 		$bar.innerHTML = this.id + " p" + pct;
 		this.el.appendChild($bar);
 
@@ -412,7 +405,7 @@ class Unit {
 	}
 
 	explode() {
-		sounds.play('explode');
+		sounds.play('boom');
 		// CSS animation for blur
 		this.fx('exploding', 900, () => {
 			this.remove();
@@ -422,12 +415,14 @@ class Unit {
 	remove() {
 		d.q('#depot').appendChild(this.el);
 		depots[this.team].push(this);
+		this.hp = this.def;
 	}
 
+	// Applies visual effect by adding & removing animation class
 	fx(name, t=1000, cb) {
-		this.el.classList.add(name);
+		this.el[C].add(name);
 		st(() => {
-			this.el.classList.remove(name);
+			this.el[C].remove(name);
 			if (cb) cb();
 		}, t);
 	}
@@ -442,24 +437,40 @@ class Unit {
 					b.damage3x3([this.x,this.y], 6);
 				});
 				break;
+
 			case 'qoblin':
 				// add shield class
+				this.el[C].add("shield");
 				break;
+
 			case 'priest':
-				// moveTo(target), special exemption
+				this.moveTo(target);	// special exemption
 				break;
+
 			case 'golem':
 				// spit rock to target - requires validmoves & targeting cursor
+				// TODO
 				break;
+
 			case 'necro':
 				// healing spell 3x3 instant
+				sounds.play('spell');
+				this.fx('spell', 1000, () => {
+					b.damage3x3([this.x,this.y], -2);
+				});
 				break;
+
 			case 'iceman':
 				// jump stomp 3x3 instant
+				//sounds.play('jump');
+				this.fx('jump', 1200, () => {
+					sounds.play('boom');
+					b.jiggle();
+					b.damage3x3([this.x,this.y], 3);
+				});
 				break;
 		}
 	}
-
 }
 
 
@@ -476,9 +487,9 @@ class Board {
 				div.setAttribute("id", "x"+x+"y"+y);
 				// Add things:
 				if (x < 5 && y < 5)
-					div.classList.add('team0spawn');
+					div[C].add('team0spawn');
 				else if (x > width - 6 && y > height - 6)
-					div.classList.add('team1spawn');
+					div[C].add('team1spawn');
 				else {
 					div.style.background = TRANSP.random();
 					if (Math.random() > 0.5) {
@@ -501,7 +512,7 @@ class Board {
 
 	// Apply a class to a cell:
 	markCell(x,y,className) {
-		d.q("#x"+x+"y"+y).classList.add(className);
+		d.q("#x"+x+"y"+y)[C].add(className);
 	}
 
 	// TODO: unMarkCells
@@ -515,12 +526,12 @@ class Board {
 
 	// Give a group of squares 'valid' class
 	highlight(cells) {
-		cells.forEach(c => d.q("#x"+c[0]+"y"+c[1]).classList.add('valid'));
+		cells.forEach(c => d.q("#x"+c[0]+"y"+c[1])[C].add('valid'));
 	}
 
 	// Clear 'valid' classes from squares
 	unHighlight() {
-		d.qa("div.valid").forEach(el => el.classList.remove('valid'));
+		d.qa("div.valid").forEach(el => el[C].remove('valid'));
 	}
 
 	// Figure out which squares to visit to get from A to B (ortho or diag):
@@ -570,12 +581,16 @@ class Board {
 	damageCell(point, hurt) {
 		// Find occupants:
 		var ids = b.at(point);
-		console.log(ids);
 		// Find units, damage them:
 		ids.filter(id => !id.startsWith('tree'))
 		.map(id => units.find(u => u.id == id).hurt(hurt));
 	}
 
+	jiggle() {
+		var f = d.q("#fx");
+		f[C].add('jiggle');
+		st(() => { f[C].remove('jiggle'); }, 1000);
+	}
 }
 
 
@@ -595,7 +610,7 @@ class UI {
 		d.qa("#tools li").forEach((li, i) => {
 			var n = depotCounts[i];
 			li.lastChild.innerHTML = n;
-			if (n < 1) li.classList.add('disabled');
+			if (n < 1) li[C].add('disabled');
 		});
 	}
 
@@ -645,13 +660,13 @@ d.qa("#tools i").forEach(el => {
 			<u>Melee Attack:</u> ${txt[2]}<br>
 			<u>Defence:</u> ${txt[3]}<br>
 			<u>Special:</u> ${txt[4]}
-			<i class="${c}"></i>
+			<i class="${c}"><s></s></i>
 		`;
 	});
 	el.addEventListener('mouseout', () => { d.q("#info").innerHTML = ""; });
 	el.addEventListener('click', () => {
 		sounds.play('click');
-		if (el.classList.contains('disabled')) return;
+		if (el.parentNode[C].contains('disabled')) return;
 		var type = el.classList[0];
 		UI.setMode('place-'+type);
 		selectedUnit = depots[0].filter(u => u.type == type)[0];
