@@ -51,9 +51,10 @@ var C = 'classList';
 //const PIECES = ["🤖","👻","😈","👹","🦄","🐲","🐍","💣","🕸️","🏂"];
 const PLANTS = ["🎄","🌲","🌳","🌵"];
 //const WEAP = ["🔪","🗡️","🔫","⛏️"];
-const SPESH = ["💥","🛡️","⛸️","⚫","🔮","💢"];
+const SPESH = ["💥","🛡️","⛸️","⚫","🔮","⚕️","💢"];
 //const FX = [,"🔥"];
-
+const FLAG = "🚩";
+const NUMS = ["0⃣","1⃣","2⃣","️3⃣"];
 // Text
 const TEXT = {	// key : [Name, Movement, Attack, Special]
 	"mine": ["Mineshroom", "None", "Explodes when stepped on", "N/A", "Triggers a big explosion with more damage"],
@@ -81,7 +82,8 @@ var gameMode;		// place-, move-, spesh, ai
 var selectedUnit;
 var depots = {0: [], 1: []};
 var guid = 0;
-var myTurn = 1;
+var myTurn = true;
+var myMoves = 1;
 
 // Sounds
 var sounds = {
@@ -96,6 +98,7 @@ var sounds = {
 	timer: "0,0.08,0.41,0.5,0.53,0.46,,0.78,0.96,,,,,,,0.61,,,0.33,0.6399,,0.93,0.6799,0.5",
 	spawn: "0,0.51,0.12,,0.58,0.68,0.41,-0.4599,0.74,,,0.06,,0.29,0.0735,0.8,-0.14,0.26,0.9,0.4399,0.39,0.15,0.813,0.5",
 	reverse: "0,0.1074,0.2,,0.3412,0.903,0.106,-0.3157,,,,,,0.85,-0.435,0.3178,0.2343,-0.4811,0.95,-0.18,0.7763,0.4521,-0.0117,0.5",
+	jump: "",
 
 	play: function(name) {
 		var player = new Audio();
@@ -612,6 +615,7 @@ class UI {
 			li.lastChild.innerHTML = n;
 			if (n < 1) li[C].add('disabled');
 		});
+		d.q("#moves").innerHTML = NUMS[myMoves]+" MOVES";
 	}
 
 	static setMode(mode) {

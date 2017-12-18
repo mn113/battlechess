@@ -39,21 +39,23 @@ body > p > canvas {
 	list-style: none;
 	padding-left: 0;
 }
-#tools > a {
+#tools > * {
 	display: block;
-}
-#tools li,
-#tools > a {
 	border: 1px solid #333;
 	background: radial-gradient(ellipse at center, #888 0%, #666 100%);
 	min-width: 40px;
 	height: 40px;
+	padding: 0 2px;
 	color: #fff;
 	display: flex;
 	align-items: center;
 	justify-content: center;
 	position: relative;
 	cursor: pointer;
+}
+#tools > *:hover {
+	color: #ff0;
+	filter: brightness(1.2);
 }
 #tools i {
 	transform: none;
@@ -69,9 +71,10 @@ body > p > canvas {
 }
 #info {
 	position: absolute;
-	top: 50px;
-	left: 5px;
+	top: 60px;
+	left: 10px;
 	color: #fff;
+	line-height: 1.4em;
 	xborder: 1px dotted fuchsia;
 }
 #info i {
@@ -84,16 +87,6 @@ body > p > canvas {
 }
 #info u:first-child {
 	font-size: 2em;
-}
-#rot:hover,
-#mov:hover,
-#arm:hover,
-#end:hover,
-.rotate #rot,
-.move #mov,
-.arm #arm {
-	color: #ff0;
-	filter: brightness(1.2);
 }
 
 
@@ -244,6 +237,13 @@ i.special {
 .ne s {}
 .ee s { background-position: 0 100%; }
 .se s {}
+
+.shield s:after {
+	content: "🛡️";
+	position: absolute;
+	font-size: 18px;
+	left: 3px;
+}
 
 @keyframes vertbob {
 	50% { padding-bottom: 3px; }
