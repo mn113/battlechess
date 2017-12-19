@@ -9,22 +9,27 @@ body {
 	background: url(img/bricks.svg),
 	radial-gradient(ellipse at center, #999 0%, #000 80%);
 }
-body > p {
-	position: absolute;
-	bottom: 20px;
-}
-body > p > canvas {
-	display: inline;
-	margin: 0 0.2em 0.4em 0;
-}
 #depot {
 	display: none;
+}
+#msg {
+	text-align: center;
+	position: absolute;
+	border: 1px dashed blue;
+	transition: 1s top;
+}
+#msg canvas {
+	display: inline;
+	margin: 0 0.2em 0.4em 0;
 }
 #mode {
 	position: absolute;
 	top: 0;
 	right: 0;
 	color: white;
+}
+.ai #fx {
+	filter: sepia(.5);
 }
 
 
@@ -251,9 +256,9 @@ i.special {
 .jiggle { animation: jiggle 0.33s 3 alternate; }
 @keyframes jiggle {
 	17% { transform: translate(0px,4px); }
-	33% { transform: translate(-3px,4px); }
+	33% { transform: translate(-3px,4px); filter: invert(); }
 	50% { transform: translate(3px,-4px); }
-	67% { transform: translate(-3px,-4px); }
+	67% { transform: translate(-3px,-4px); filter: invert(); }
 	83% { transform: translate(3px,4px); }
 }
 .flash s { animation: 0.6s 3 flash; }
@@ -291,6 +296,7 @@ i.special {
 	pointer-events: none;
 	cursor: not-allowed;
 }
+
 #credit {
 	position: absolute;
 	bottom: 0;
@@ -301,6 +307,10 @@ i.special {
 	color: #ccc;
 }
 
+
+/*******************/
+/* HEALTH OVERLAYS */
+/*******************/
 i figure {
 	position: absolute;
 	top: -35px;

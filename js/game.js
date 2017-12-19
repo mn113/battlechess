@@ -35,6 +35,8 @@ function swapClass(old, nu, el) {
 	el[C].remove(old);
 	el[C].add(nu);
 }
+const unwrap = (id) => id.slice(1).split("y").map(n => +n);
+
 
 // Aliases
 var d = document;
@@ -44,8 +46,11 @@ d.qa = d.querySelectorAll;
 d.b = d.body;
 d.b.c = d.b.classList;
 var $ga = d.q("#ga");
+var $fx = d.q("#fx");
+var $msg = d.q("#msg");
 var st = setTimeout;
 var C = 'classList';
+var rand = Math.random;
 
 // Unicode icons:
 //const PIECES = ["🤖","👻","😈","👹","🦄","🐲","🐍","💣","🕸️","🏂"];
@@ -76,14 +81,14 @@ const TRANSP = [
 
 const baseSquad = "mine,mine,qoblin,qoblin,qoblin,qoblin,fireskull,fireskull,priest,priest,golem,golem,necro,iceman".split(",");
 
-var cells = [];
-var units = [];
 var gameMode;		// place-, move-, spesh, ai
+var units = [];
 var selectedUnit;
 var depots = {0: [], 1: []};
 var guid = 0;
-var myTurn = true;
-var myMoves = 1;
+var myTurn = false;
+var myMoves = [];	// 3 ids per turn
+var placed = [];	// 3 ids per turn
 
 // Sounds
 var sounds = {
@@ -107,19 +112,6 @@ var sounds = {
 	}
 };
 
-// eslint-disable-next-line
-function endTurn() {
-	b.unHighlight();
-	// +1 health for all!
-	for (var u of units) {
-		if (u.hp < u.def) u.hp++;
-	}
-	// AI's turn
-	myTurn = !myTurn;
-	// Reset place/move/atts
-}
-
-const unwrap = (id) => id.slice(1).split("y").map(n => +n);
 
 class Unit {
 	constructor(type, team=0, x=null, y=null) {
@@ -166,8 +158,8 @@ class Unit {
 		this.el.addEventListener('click', (e) => {
 			e.stopPropagation();
 			sounds.play('click');
-			if (gameMode == 'rotate') this.rotate();
-			if (gameMode == 'move-'+this.id) this.rotate();
+			if (myMoves.includes(this.id) || gameMode == 'move-'+this.id) this.rotate();
+			else if (gameMode == 'spesh') this.doSpecial();
 			else {
 				// Highlight the valid cells we can move to:
 				selectedUnit = this;
@@ -197,9 +189,9 @@ class Unit {
 		var orth4 = this._addTo([[0,1],[1,0],[0,-1],[-1,0]]);
 		var diag4 = this._addTo([[1,1],[-1,-1],[1,-1],[-1,1]]);
 		var doglegs = this._addTo([[2,1],[2,-1],[-2,1],[-2,-1],[1,2],[1,-2],[-1,2],[-1,-2]]);
-		var orthAll = cells.filter(c => c[0] == this.x || c[1] == this.y);
+		var orthAll = b.cells.filter(c => c[0] == this.x || c[1] == this.y);
 		var orthAllLtd = orthAll.filter(c => Math.abs(c[0] - this.x) < 4 && Math.abs(c[1] - this.y) < 4);
-		var diagAll = cells.filter(c => Math.abs(c[0] - this.x) == Math.abs(c[1] - this.y));
+		var diagAll = b.cells.filter(c => Math.abs(c[0] - this.x) == Math.abs(c[1] - this.y));
 
 		switch(this.type) {
 			case 'mine': return [];
@@ -223,6 +215,7 @@ class Unit {
 
 		if (spawned) {
 			depots[this.team].splice(depots[this.team].indexOf(this),1);
+			placed.push(this.id);
 		}
 		else {
 			// Kill tree:
@@ -254,6 +247,7 @@ class Unit {
 		return this;
 	}
 
+	// Rotate through 4 sprites:
 	rotate() {
 		if (this.type == 'mine') return;
 		var seq = ['ss','ww','nn','ee'];
@@ -285,7 +279,9 @@ class Unit {
 
 		if (this.type == 'fireskull') {
 			sounds.play('fly');
-			this._flyTo(dest);
+			this._flyTo(dest, 600, () => {
+				this._finishMove();
+			});
 		}
 		else {
 			// Calculate animation path, must go square by square:
@@ -303,20 +299,27 @@ class Unit {
 					if (obsts.some(o => o.team === this.team)) {
 						// path blocked
 						console.log("blocked at", nextCell);
-						return;
+						this._finishMove();
 					}
 					else this._stepTo(nextCell, step);
+				}
+				else {
+					// No more route...
+					console.log('Route completed.');
+					this._finishMove();
 				}
 			}.bind(this);
 			step();
 		}
-		// Done		// BUG: CODE NEVER REACHED?
-		UI.setMode();
+	}
+
+	// Admin when movement & combat is completed:
+	_finishMove() {
+		console.log('_finishMove');
 		b.unHighlight();
 		this.vMoves = this._validMoves();
 		this.face(this.team == 0 ? 'ss' : 'nn');
-		console.log('Done with moveTo');
-		return this;
+		this.logMove();
 	}
 
 	// Move to an adjacent square:
@@ -366,6 +369,7 @@ class Unit {
 		return clone;
 	}
 
+	// Simulate a fight between 2 units; apply damage:
 	melee(enemy) {
 		console.log(enemy);
 		var att1 = this.att + [-1,1].random(),
@@ -384,6 +388,7 @@ class Unit {
 		}
 	}
 
+	// Take off HP and do necessary visuals & admin:
 	hurt(amount) {
 		this.hp -= amount;
 		this.fx('flash');
@@ -394,6 +399,7 @@ class Unit {
 		else if (this.hp > this.def) this.hp == this.def;
 	}
 
+	// Briefly visualise unit's health:
 	showHealthBar() {
 		if (this.type == 'mine') return;
 		var pct = 25 * Math.ceil(4 * this.hp / this.def);		// limit percentages to 25,50,75,100
@@ -407,6 +413,7 @@ class Unit {
 		}, 1750);
 	}
 
+	// Sound & anim for death:
 	explode() {
 		sounds.play('boom');
 		// CSS animation for blur
@@ -415,10 +422,13 @@ class Unit {
 		});
 	}
 
+	// Send unit back to the depot:
 	remove() {
 		d.q('#depot').appendChild(this.el);
 		depots[this.team].push(this);
 		this.hp = this.def;
+		this.x = null;
+		this.y = null;
 	}
 
 	// Applies visual effect by adding & removing animation class
@@ -430,6 +440,7 @@ class Unit {
 		}, t);
 	}
 
+	// Execute or enable the special move:
 	doSpecial(target) {
 		switch(this.type) {
 			case 'mine':
@@ -473,6 +484,16 @@ class Unit {
 				});
 				break;
 		}
+
+		this.logMove();
+	}
+
+	// Log that this unit moved, so it can't again in this turn:
+	logMove() {
+		myMoves.push(this.id);
+		UI.drawTools();
+		UI.setMode();
+		if (myMoves.length == 3 ) endTurn();
 	}
 }
 
@@ -482,6 +503,7 @@ class Board {
 	constructor(width, height=width) {
 		this.w = width;
 		this.h = height;
+		this.cells = [];
 		// Build board:
 		for (var y=0; y<height; y++) {
 			for (var x=0; x<width; x++) {
@@ -503,7 +525,7 @@ class Board {
 
 				div.style.zIndex = x + y;	// (0,0) will be furthest away square
 				// Apply random colour change to each cell:
-				cells.push([x,y]);
+				this.cells.push([x,y]);
 			}
 		}
 		// Add anim layer
@@ -590,9 +612,8 @@ class Board {
 	}
 
 	jiggle() {
-		var f = d.q("#fx");
-		f[C].add('jiggle');
-		st(() => { f[C].remove('jiggle'); }, 1000);
+		$fx[C].add('jiggle');
+		st(() => { $fx[C].remove('jiggle'); }, 1000);
 	}
 }
 
@@ -615,30 +636,104 @@ class UI {
 			li.lastChild.innerHTML = n;
 			if (n < 1) li[C].add('disabled');
 		});
-		d.q("#moves").innerHTML = NUMS[myMoves]+" MOVES";
+		d.q("#moves").innerHTML = NUMS[3 - myMoves.length]+" MOVES";
 	}
 
 	static setMode(mode) {
-		console.info('setMode(',mode,')');
+		console.info(`setMode(${mode})`);
 		// Clear all classes:
 		while (d.b.c.length > 0) d.b.c.remove(d.b.c[0]);
-		gameMode = mode;
+		gameMode = mode || "";
 		// Add the new class:
 		if (mode) d.b.c.add(mode);
-		d.q("#mode").innerHTML = mode || "";
+		d.q("#mode").innerHTML = gameMode;
 		b.unHighlight();
+	}
+
+	static msg(offset, text, scale) {
+		$msg.innerHTML = "";
+		$msg.appendChild(pixCanv(text, scale));
+		$msg.style.top = offset+"px";
 	}
 }
 
 
 class AI {
 	constructor() {
+		// Make 14 (non-board) units:
 		for (var t of baseSquad) {
 			new Unit(t,1);
 		}
 		return this;
 	}
+
+	startTurn() {
+		var moves = 3;
+		// Units on board:
+		var team = units.filter(u => u.team == 1 && u.x && u.type != 'mine').shuffle().slice(0,3);
+		console.log(team);	// ok
+		while (moves > 0) {
+			this.choosePiece(team);	// TODO: ensure 3 different
+			moves--;
+		}
+		endTurn();
+	}
+
+	choosePiece(team) {
+		// Choose a piece. Necro > Priest > Skull > Golem > Iceman > Goblin > Mine
+		for (var u of team) {
+			// Check vMoves. Execute first which will hit an enemy.
+			console.log(u);
+			var moves = u._validMoves();
+			var m = this.chooseMove(moves);
+			// Sometimes choose special
+			if (u.type != 'fireskull' && rand() > 0.8) {
+				if (u.type == 'priest' || u.type == 'golem') u.doSpecial(m);
+				else u.doSpecial();	// should check area first
+			}
+			else {
+				u.moveTo(m);
+			}
+		}
+		// TODO: delay using callback
+	}
+
+	chooseMove(moves) {
+		return moves.random();
+		// TODO choose a square with an enemy
+		//  AND not blocked enroute
+		//   OR square which intersects flag's validMoves
+	}
 }
+
+
+function endTurn() {
+	console.log('endTurn()');
+	b.unHighlight();
+	// Reset place/move/atts:
+	placed = [];
+	myMoves = [];
+	UI.drawTools();
+	// +1 health for all!
+	for (var u of units) {
+		if (u.hp < u.def) u.hp++;
+	}
+	// Countdown clock on depots increments:
+	// TODO
+
+	// Next player's turn:
+	myTurn = !myTurn;
+	if (myTurn) {
+		UI.setMode();
+		UI.msg(100, "Your turn, you little arse-goblin", 4);
+	}
+	else {
+		UI.setMode('ai');
+		UI.msg(700, "Satan is thinking...", 5);
+		opp.startTurn();
+	}
+}
+
 
 
 // Create everything:
@@ -651,7 +746,7 @@ b.placeUnits(1,7);
 b.placeUnits(0,7);
 // Update:
 UI.drawTools();
-
+endTurn();
 
 // Tools behaviours:
 d.qa("#tools i").forEach(el => {
@@ -671,6 +766,7 @@ d.qa("#tools i").forEach(el => {
 	el.addEventListener('click', () => {
 		sounds.play('click');
 		if (el.parentNode[C].contains('disabled')) return;
+		if (placed.length > 2) return;
 		var type = el.classList[0];
 		UI.setMode('place-'+type);
 		selectedUnit = depots[0].filter(u => u.type == type)[0];
@@ -702,6 +798,3 @@ live('#ga', 'click', () => {
 	console.log('top-level mode unset');
 	UI.setMode();
 });
-
-// Text
-d.b.appendChild(pixCanv('The quick, brown fox jumps over a lazy dog. 123:456:7890'));
