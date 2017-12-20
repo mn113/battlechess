@@ -211,8 +211,9 @@ class Unit {
 		this.xy = [x,y];
 
 		if (spawned) {
-			depots[this.team].splice(depots[this.team].indexOf(this),1);
+			depots[this.team].splice(depots[this.team].indexOf(this), 1);
 			placed.push(this.id);
+			this.fx('flash');
 		}
 		else {
 			// Kill tree:
@@ -222,7 +223,7 @@ class Unit {
 			var obsts = b.at(point);
 			//console.log(point, obsts);
 			// Mines go boom:
-			if (obsts.some(o => o.type == 'mine') && this.type !== 'qoblin') {
+			if (obsts.some(o => o.type == 'mine') && this.type != 'qoblin' && this.type != 'fireskull') {
 				var mine = obsts.filter(o => o.type == 'mine')[0];
 				mine.explode(1);
 				this.hurt(mine.att);
@@ -712,8 +713,7 @@ class AI {
 	}
 
 	movePiece(u) {
-		var moves = u._validMoves(),
-			bestMove = this.chooseMove(u, moves),
+		var bestMove = this.chooseMove(u),
 			localValue = b.valueAround(u.xy, u.team),
 			r = rand();
 		// Sometimes choose special:
@@ -739,8 +739,8 @@ class AI {
 		}
 	}
 
-	chooseMove(unit, moves) {
-		moves = moves.map(m => {
+	chooseMove(unit) {
+		var moves = unit._validMoves().map(m => {
 			// Distance from move terminus to flag:
 			var heu = b.manhattan(m, unwrap(d.q("#flag0").parentNode.id));		// lower heu more desirable
 

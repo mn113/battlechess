@@ -272,7 +272,7 @@ i.special {
 	67% { transform: translate(-3px,-4px); filter: invert(); }
 	83% { transform: translate(3px,4px); }
 }
-.flash s { animation: 0.6s 3 flash; }
+.flash s { animation: 0.35s 3 flash; }
 @keyframes flash {
 	50% { opacity: 0.2; }
 }
