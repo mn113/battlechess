@@ -19,10 +19,6 @@
 		<li><i class="golem"><s></s></i><data></data></li>
 		<li><i class="necro"><s></s></i><data></data></li>
 		<li><i class="iceman"><s></s></i><data></data></li>
-		<!--a id="rot" onclick="UI.setMode('rotate')">ROT</a-->
-		<!--a id="mov" onclick="UI.setMode('move')">MOV</a-->
-		<!--a id="arm" onclick="UI.setMode('arm')">ARM<br>(1,2,3)</a-->
-		<!--a id="mov" onclick="UI.setMode('explode')">💣</a-->
 		<a id="moves">3️⃣MOVES</a>
 		<a id="spesh" onclick="UI.setMode('spesh')">💫 SPECIAL</a>
 		<a id="end" onclick="endTurn()">DONE</a>
@@ -50,15 +46,13 @@ anim: shrink?
 anim: different walk speeds
 anim: fireball
 anim: attacking
-flags
 ai: moves intersecting flag
-ai: proximity
+ai: proximity check
 ui: toolbox countdown circle
-goblin walk on mines
+qoblin may walk on mines
+skulls can float on mines
 sfx: prevent many
 sfx: different walks
-sfx: mine ticker, fireskull, golem, necro, iceman, priest, necro, jump, jand
-gfx: back-and-forth turns thing
 sprites: golem & goblin should face se/ne only -> more complex orientation
 utf8 powerups, potions
 particle canvas?

@@ -35,8 +35,8 @@ function swapClass(old, nu, el) {
 	el[C].remove(old);
 	el[C].add(nu);
 }
+// Convert "#x3y5" identifier into [3,5] point array:
 const unwrap = (id) => id.slice(1).split("y").map(n => +n);
-
 
 // Aliases
 var d = document;
@@ -54,23 +54,10 @@ var rand = Math.random;
 
 // Unicode icons:
 //const PIECES = ["🤖","👻","😈","👹","🦄","🐲","🐍","💣","🕸️","🏂"];
-const PLANTS = ["🎄","🌲","🌳","🌵"];
 //const WEAP = ["🔪","🗡️","🔫","⛏️"];
+const PLANTS = ["🎄","🌲","🌳","🌵"];
 const SPESH = ["💥","🛡️","⛸️","⚫","🔮","⚕️","💢"];
-//const FX = [,"🔥"];
-const FLAG = "🚩";
 const NUMS = ["0⃣","1⃣","2⃣","️3⃣"];
-// Text
-const TEXT = {	// key : [Name, Movement, Attack, Special]
-	"mine": ["Mineshroom", "None", "Explodes when stepped on", "N/A", "Triggers a big explosion with more damage"],
-	"qoblin": ["Goblin", "One step in 4 possible directions.", "Fisticuffs (weak)", "weak", "Can raise his shield to block 50% of damage"],
-	"fireskull": ["Hothead", "Moves in 2x1 dog-legs, 8 possible directions", "Fiery Bite (average)", "weak", "None, but can float past obstacles"],
-	"priest": ["Priest", "Moves only on diagonals", "Bad Habit (weak)", "average", "Can rush through a line of enemies, slashing them all"],
-	"golem": ["Golem","Moves up to 4 steps in the 4 non-diagonal directions", "Rocky Rumble (average)", "strong", "Can spit a rock with decent range and damage"],
-	"necro": ["Necromancer", "Unlimited movement in 8 directions", "Dance of Death (strong)", "average", "Can cast a healing spell on units surrounding her"],
-	"iceman": ["Ice Demon", "Moves 1 step in all 8 directions", "Ice Punch (strong)", "strong", "His jump causes a damaging earthquake"]
-};
-
 const COLOURS = [
 	"#6B8E23","#7B8E23","#5B8E33","#6B7E13"
 ];
@@ -78,7 +65,20 @@ const TRANSP = [
 	"rgba(130,180,110,0.7)", "rgba(150,180,110,0.7)", "rgba(130,160,110,0.7)"
 ];
 
+// Text
+const TEXT = {	// key : [Name, Movement, Attack, Special, value]
+	"mine": ["Mineshroom", "None", "Explodes when stepped on", "N/A", "Triggers a big explosion with more damage", -3],
+	"qoblin": ["Goblin", "One step in 4 possible directions.", "weak", "weak", "Can raise his shield to block 50% of damage", 1],
+	"fireskull": ["Hothead", "Moves in 2x1 dog-legs, 8 possible directions", "average", "weak", "None, but can float past obstacles", 3],
+	"priest": ["Priest", "Moves up to 6 steps on diagonals only", "weak", "average", "Can rush through a line of enemies, slashing them all", 3],
+	"golem": ["Golem","Moves up to 4 steps in the 4 non-diagonal directions", "average", "strong", "Can spit a rock with decent range and damage", 5],
+	"necro": ["Necromancer", "Unlimited movement in 8 directions", "strong", "average", "Can cast a healing spell on units surrounding her", 9],
+	"iceman": ["Ice Demon", "Moves 1 step in all 8 directions", "strong", "strong", "His jump causes a damaging earthquake", -1],
+	"flag": ["Flag", "Capture this!", "Defend this!", null, null, 99]
+};
 
+const TYPES = ["mine","qoblin","fireskull","priest","golem","necro","iceman"];
+const BASES = [2,4,2,2,2,1,1];
 const baseSquad = "mine,mine,qoblin,qoblin,qoblin,qoblin,fireskull,fireskull,priest,priest,golem,golem,necro,iceman".split(",");
 
 var gameMode;		// place-, move-, spesh, ai
@@ -92,18 +92,20 @@ var placed = [];	// 3 ids per turn
 
 // Sounds
 var sounds = {
-	click: "1,,0.22,0.46,,0.9,0.86,-0.6,-1,-0.6681,,-1,,,-1,,-0.0014,0.1729,0.95,0.8999,,,0.2367,0.5",
-	move: "1,0.59,0.35,0.668,0.23,0.18,0.06,-0.16,-0.2199,0.8737,0.4244,-0.1009,0.0259,0.5304,-0.0402,0.4732,0.3296,0.2235,0.8581,-0.38,0.0049,0.0367,-0.0439,0.5",
-	fly: "3,0.99,0.58,0.3,1,0.69,0.3924,0.02,0.02,,,-0.18,,,-0.0116,0.92,-0.2199,0.56,0.9994,-0.1999,0.5882,0.1433,-0.0205,0.5",
-	slash: "1,,0.0648,,0.2896,0.5191,,-0.3743,,,,,,,,,,,1,,,0.0127,,0.5",
+	spawn:	"0,0.51,0.12,,0.58,0.68,0.41,-0.4599,0.74,,,0.06,,0.29,0.0735,0.8,-0.14,0.26,0.9,0.4399,0.39,0.15,0.813,0.5",
+	click:	"1,,0.22,0.46,,0.9,0.86,-0.6,-1,-0.6681,,-1,,,-1,,-0.0014,0.1729,0.95,0.8999,,,0.2367,0.5",
+	move:	"1,0.59,0.35,0.668,0.23,0.18,0.06,-0.16,-0.2199,0.8737,0.4244,-0.1009,0.0259,0.5304,-0.0402,0.4732,0.3296,0.2235,0.8581,-0.38,0.0049,0.0367,-0.0439,0.5",
+	fly:	"3,0.99,0.58,0.3,1,0.69,0.3924,0.02,0.02,,,-0.18,,,-0.0116,0.92,-0.2199,0.56,0.9994,-0.1999,0.5882,0.1433,-0.0205,0.5",
+	slash:	"1,,0.0648,,0.2896,0.5191,,-0.3743,,,,,,,,,,,1,,,0.0127,,0.5",
 	slash2: "1,0.08,0.24,0.33,0.17,0.69,0.39,-0.2199,-0.0554,0.0247,0.0023,,,0.266,0.017,,-0.0534,0.0995,1,-0.0799,0.03,0.91,0.12,0.5",
-	shoot: "",
-	hurt: "1,,0.0704,,0.1996,0.5761,,-0.4487,,,,,,,,,,,1,,,,,0.5",
-	boom: "3,.07,.43,.29,.48,.179,,-.26,,,,,,,,,.1895,.16,1,,,,,.5",
-	timer: "0,0.08,0.41,0.5,0.53,0.46,,0.78,0.96,,,,,,,0.61,,,0.33,0.6399,,0.93,0.6799,0.5",
-	spawn: "0,0.51,0.12,,0.58,0.68,0.41,-0.4599,0.74,,,0.06,,0.29,0.0735,0.8,-0.14,0.26,0.9,0.4399,0.39,0.15,0.813,0.5",
-	reverse: "0,0.1074,0.2,,0.3412,0.903,0.106,-0.3157,,,,,,0.85,-0.435,0.3178,0.2343,-0.4811,0.95,-0.18,0.7763,0.4521,-0.0117,0.5",
-	jump: "",
+	hurt:	"1,,0.0704,,0.1996,0.5761,,-0.4487,,,,,,,,,,,1,,,,,0.5",
+	reverse:"0,0.1074,0.2,,0.3412,0.903,0.106,-0.3157,,,,,,0.85,-0.435,0.3178,0.2343,-0.4811,0.95,-0.18,0.7763,0.4521,-0.0117,0.5",
+	timer:	"0,0.08,0.41,0.5,0.53,0.46,,0.78,0.96,,,,,,,0.61,,,0.33,0.6399,,0.93,0.6799,0.5",
+	boom:	"3,.07,.43,.29,.48,.179,,-.26,,,,,,,,,.1895,.16,1,,,,,.5",
+	bigboom:"3,0.2404,0.2415,0.0454,0.8159,0.5223,,-0.2005,-0.2372,,0.1818,-0.4207,-0.9964,0.0629,0.0449,,-0.0105,-0.3839,0.9771,0.1777,-0.4885,0.0005,-0.3639,0.41",
+	jump:	"0,,0.23,,0.2242,0.33,,0.2217,,,,,,0.3816,,,,,1,,,0.0371,,0.5",
+	spell:	"2,0.33,0.55,0.2503,0.2881,0.52,0.28,0.3999,0.1599,,,0.7,0.5334,-0.0897,-0.0773,0.77,-0.0418,0.0381,0.9892,0.1551,-0.2756,0.4,0.146,0.2",
+	spit:	"2,,0.73,0.58,1,0.4,0.0188,-0.5,0.6599,,,,,0.6689,-0.5143,,,,1,,,0.1426,,0.2",
 
 	play: function(name) {
 		var player = new Audio();
@@ -113,6 +115,7 @@ var sounds = {
 };
 
 
+// Class representing a game piece
 class Unit {
 	constructor(type, team=0, x=null, y=null) {
 		this.type = type;
@@ -121,6 +124,7 @@ class Unit {
 		this.facing = (team == 0) ? 'ss' : 'nn';
 		this.x = x;
 		this.y = y;
+		this.xy = [x,y];
 		// Combat attributes:
 		var c = type.charAt(0);
 		this.att = {m:5,q:5,f:7,p:6,g:7,n:8,i:9}[c];
@@ -138,7 +142,8 @@ class Unit {
 		if (typeof team == 'number') {
 			units.push(this);
 			depots[this.team].push(this);
-			// To board:
+			this.frozen = 0;	// available
+			// To board?
 			if (x !== null && y !== null) this.placeAt([x,y]);
 			this.vMoves = false;
 		}
@@ -148,18 +153,12 @@ class Unit {
 	// Wire up the listeners for clicking or hovering this unit:
 	_addEventListeners() {
 		// Add interaction behaviours:
-		this.el.addEventListener('mouseover', () => {
-			if (gameMode == 'move-'+this.id) {
-				//this.vMoves = this.vMoves || this._validMoves();
-				//b.highlight(this.vMoves);
-			}
-		});
-
 		this.el.addEventListener('click', (e) => {
 			e.stopPropagation();
 			sounds.play('click');
-			if (myMoves.includes(this.id) || gameMode == 'move-'+this.id) this.rotate();
-			else if (gameMode == 'spesh') this.doSpecial();
+
+			if (gameMode == 'move-'+this.id || myMoves.includes(this.id)) this.rotate();
+			else if (gameMode == 'spesh' && !['priest','golem'].includes(this.type)) this.doSpecial();
 			else {
 				// Highlight the valid cells we can move to:
 				selectedUnit = this;
@@ -168,10 +167,6 @@ class Unit {
 				b.highlight(this.vMoves);
 				this.showHealthBar();
 			}
-		});
-
-		this.el.addEventListener('mouseout', () => {
-			//if (gameMode == 'move-'+this.id) b.unHighlight();
 		});
 		return this;
 	}
@@ -190,14 +185,15 @@ class Unit {
 		var diag4 = this._addTo([[1,1],[-1,-1],[1,-1],[-1,1]]);
 		var doglegs = this._addTo([[2,1],[2,-1],[-2,1],[-2,-1],[1,2],[1,-2],[-1,2],[-1,-2]]);
 		var orthAll = b.cells.filter(c => c[0] == this.x || c[1] == this.y);
-		var orthAllLtd = orthAll.filter(c => Math.abs(c[0] - this.x) < 4 && Math.abs(c[1] - this.y) < 4);
 		var diagAll = b.cells.filter(c => Math.abs(c[0] - this.x) == Math.abs(c[1] - this.y));
+		var orthAllLtd = orthAll.filter(c => b.manhattan(c, this.xy) < 4);
+		var diagAllLtd = diagAll.filter(c => b.manhattan(c, this.xy) < 12);
 
 		switch(this.type) {
 			case 'mine': return [];
 			case 'qoblin': return orth4;
 			case 'fireskull': return doglegs;
-			case 'priest': return diagAll;
+			case 'priest': return diagAllLtd;
 			case 'golem': return orthAllLtd;
 			case 'necro': return orthAll.concat(diagAll);
 			case 'iceman': return orth4.concat(diag4);
@@ -212,6 +208,7 @@ class Unit {
 		this.el.style.opacity = 1;
 		this.x = x;
 		this.y = y;
+		this.xy = [x,y];
 
 		if (spawned) {
 			depots[this.team].splice(depots[this.team].indexOf(this),1);
@@ -222,11 +219,8 @@ class Unit {
 			if (sqr.firstChild && sqr.firstChild.id.startsWith('tree')) sqr.firstChild.remove();
 
 			// What is here?
-			var obstIds = b.at(point),
-				obsts = obstIds
-				.map(id => units.find(u => u.id == id))
-				.filter(o => typeof o == 'object');
-			console.log(point, obsts);
+			var obsts = b.at(point);
+			//console.log(point, obsts);
 			// Mines go boom:
 			if (obsts.some(o => o.type == 'mine') && this.type !== 'qoblin') {
 				var mine = obsts.filter(o => o.type == 'mine')[0];
@@ -285,17 +279,14 @@ class Unit {
 		}
 		else {
 			// Calculate animation path, must go square by square:
-			var route = b.findRoute([this.x,this.y], dest);
+			var route = b.findRoute(this.xy, dest);
 			console.log(route);
 			// Walk loop:
 			var step = function() {
 				if (route.length > 0) {
 					// Check next cell, who is there?
 					var nextCell = route.shift(),
-						obstIds = b.at(nextCell),
-						obsts = obstIds.map(id => units.find(u => u.id == id)).filter(o => typeof o == 'object');
-					console.log(nextCell, obsts);
-
+						obsts = b.at(nextCell);
 					if (obsts.some(o => o.team === this.team)) {
 						// path blocked
 						console.log("blocked at", nextCell);
@@ -429,6 +420,8 @@ class Unit {
 		this.hp = this.def;
 		this.x = null;
 		this.y = null;
+		this.xy = null;
+		this.frozen = 3;
 	}
 
 	// Applies visual effect by adding & removing animation class
@@ -448,7 +441,7 @@ class Unit {
 				sounds.play('timer');
 				this.fx('grow', 1000, () => {
 					this.explode();
-					b.damage3x3([this.x,this.y], 6);
+					b.damage3x3(this.xy, 6);
 				});
 				break;
 
@@ -458,7 +451,13 @@ class Unit {
 				break;
 
 			case 'priest':
-				this.moveTo(target);	// special exemption
+				var route = b.findRoute(this.xy, target);
+				this._flyTo(target, 600, () => {
+					// Damage occupants en-route:
+					for (var i = 0; i < route.length; i++) {
+						b.damageCell(route[i], [4,4,3,3,2,2,1,1][i]);
+					}
+				});
 				break;
 
 			case 'golem':
@@ -470,7 +469,7 @@ class Unit {
 				// healing spell 3x3 instant
 				sounds.play('spell');
 				this.fx('spell', 1000, () => {
-					b.damage3x3([this.x,this.y], -2);
+					b.damage3x3(this.xy, -2);
 				});
 				break;
 
@@ -480,7 +479,7 @@ class Unit {
 				this.fx('jump', 1200, () => {
 					sounds.play('boom');
 					b.jiggle();
-					b.damage3x3([this.x,this.y], 3);
+					b.damage3x3(this.xy, 3);
 				});
 				break;
 		}
@@ -493,11 +492,13 @@ class Unit {
 		myMoves.push(this.id);
 		UI.drawTools();
 		UI.setMode();
+		// Third logging is what triggers the switch of play
 		if (myMoves.length == 3 ) endTurn();
 	}
 }
 
 
+// Singleton class representing the game board
 class Board {
 	// Create the board HTML element:
 	constructor(width, height=width) {
@@ -535,18 +536,28 @@ class Board {
 		return this;
 	}
 
+	// Plant trees:
+	treeify() {
+
+	}
+
+	// Put a flag in each team's area:
+	putFlag(team, x, y) {
+		var flag = d.e('b');
+		flag.id = 'flag'+team;
+		flag.innerHTML = "🚩";
+		d.q("#x"+x+"y"+y).appendChild(flag);
+	}
+
 	// Apply a class to a cell:
 	markCell(x,y,className) {
 		d.q("#x"+x+"y"+y)[C].add(className);
 	}
 
-	// TODO: unMarkCells
-
-	// Check what's in a square - returns array of ids:
+	// Check what's in a square - returns array of Units:
 	at(point) {
-		var [x, y] = point;
-		var nodes = d.q("#x"+x+"y"+y).childNodes;
-		return Array.from(nodes).map(n => n.id);
+		var [x,y] = point;
+		return units.filter(u => u.x === x && u.y === y);
 	}
 
 	// Give a group of squares 'valid' class
@@ -579,13 +590,18 @@ class Board {
 		return route;
 	}
 
-	placeUnits(team, num) {
+	// Get Manhattan distance between two points:
+	manhattan(a,z) {
+		var dx = z[0]-a[0],
+			dy = z[1]-a[1];
+		return Math.abs(dx) + Math.abs(dy);
+	}
+
+	// Auto-Spawn a number of units for one team:
+	spawnUnits(team, num) {
 		var spawns = d.qa(".team"+team+"spawn");
-		// Get num units from this team:
-		units
-		.filter(u => u.team == team)
-		.shuffle()
-		.slice(0,num)
+		// Get num units from this team's depot:
+		depots[team].shuffle().slice(0,num)
 		.forEach(u => {
 			// Find an empty spawnable cell:
 			do {
@@ -594,6 +610,7 @@ class Board {
 			// Place unit:
 			u.placeAt(xy, true);
 		});
+		console.log("Spawned this turn:", placed);
 	}
 
 	damage3x3(centre, hurt) {
@@ -604,13 +621,16 @@ class Board {
 	}
 
 	damageCell(point, hurt) {
-		// Find occupants:
-		var ids = b.at(point);
 		// Find units, damage them:
-		ids.filter(id => !id.startsWith('tree'))
-		.map(id => units.find(u => u.id == id).hurt(hurt));
+		var $div = d.q("#x"+point[0]+"y"+point[1]);
+		$div[C].add('invert');
+		st(() => { $div[C].remove('invert'); }, 1000);
+
+		var units = b.at(point);
+		units.forEach(u => u.hurt(hurt));
 	}
 
+	// Global board effect:
 	jiggle() {
 		$fx[C].add('jiggle');
 		st(() => { $fx[C].remove('jiggle'); }, 1000);
@@ -618,18 +638,11 @@ class Board {
 }
 
 
+// Utility class for drawing and managing UI state
 class UI {
-	static drawTools() {
+	static drawTools(team=0) {
 		// Count units not on the board:
-		var depotCounts = [
-			2 - d.qa("#ga .mine.team0").length,
-			4 - d.qa("#ga .qoblin.team0").length,
-			2 - d.qa("#ga .fireskull.team0").length,
-			2 - d.qa("#ga .priest.team0").length,
-			2 - d.qa("#ga .golem.team0").length,
-			1 - d.qa("#ga .necro.team0").length,
-			1 - d.qa("#ga .iceman.team0").length
-		];
+		var depotCounts = TYPES.map(type => depots[team].filter(u => u.type == type && !u.frozen).length);
 		// Write the numbers in:
 		d.qa("#tools li").forEach((li, i) => {
 			var n = depotCounts[i];
@@ -641,6 +654,7 @@ class UI {
 
 	static setMode(mode) {
 		console.info(`setMode(${mode})`);
+		if (mode == 'spesh' && gameMode == 'spesh') mode = '';	// toggle it off
 		// Clear all classes:
 		while (d.b.c.length > 0) d.b.c.remove(d.b.c[0]);
 		gameMode = mode || "";
@@ -658,51 +672,87 @@ class UI {
 }
 
 
+// Singleton class for handling AI team & moves
 class AI {
 	constructor() {
+		this.team = [];
 		// Make 14 (non-board) units:
 		for (var t of baseSquad) {
-			new Unit(t,1);
+			this.team.push(new Unit(t,1));
 		}
 		return this;
 	}
 
 	startTurn() {
-		var moves = 3;
+		// Placing phase
+		this.placeUnits();
 		// Units on board:
-		var team = units.filter(u => u.team == 1 && u.x && u.type != 'mine').shuffle().slice(0,3);
-		console.log(team);	// ok
-		while (moves > 0) {
-			this.choosePiece(team);	// TODO: ensure 3 different
-			moves--;
-		}
-		endTurn();
+		// Choose a piece. Necro > Priest > Skull > Golem > Iceman > Goblin > Mine
+		var toMove = this.team.filter(u => u.x && u.type != 'mine').shuffle().slice(0,3);
+		// Moving phase:
+		console.log(toMove);	// ok
+		st(() => { this.movePiece(toMove[0]); }, 1500);
+		st(() => { this.movePiece(toMove[1]); }, 3500);
+		st(() => { this.movePiece(toMove[2]); }, 5500);
+		//st(() => { endTurn(); }, 7500);
 	}
 
-	choosePiece(team) {
-		// Choose a piece. Necro > Priest > Skull > Golem > Iceman > Goblin > Mine
-		for (var u of team) {
-			// Check vMoves. Execute first which will hit an enemy.
-			console.log(u);
-			var moves = u._validMoves();
-			var m = this.chooseMove(moves);
-			// Sometimes choose special
-			if (u.type != 'fireskull' && rand() > 0.8) {
-				if (u.type == 'priest' || u.type == 'golem') u.doSpecial(m);
-				else u.doSpecial();	// should check area first
+	placeUnits() {
+		// Place new units until no longer possible:
+		b.spawnUnits(1, Math.min(14 - depots[1].length, [1,2,3].random()));
+	}
+
+	movePiece(u) {
+		console.log(u);
+		// Check vMoves. Execute first which will hit an enemy.
+		var moves = u._validMoves();
+		var m = this.chooseMove(u, moves);
+		// Sometimes choose special
+		if (u.type != 'fireskull' && rand() > 0.8) {
+			if (u.type == 'priest' || u.type == 'golem') u.doSpecial(m);
+			else u.doSpecial();	// should check area first
+		}
+		else {
+			u.moveTo(m);
+		}
+	}
+
+	chooseMove(unit, moves) {
+		moves = moves.map(m => {
+			// Distance from move terminus to flag:
+			var heu = b.manhattan(m, unwrap(d.q("#flag0").parentNode.id));		// lower heu more desirable
+			// Value of occupants:
+			var occupants = b.at(m);
+			console.log(m, heu, occupants);
+
+			if (occupants.length > 1) {
+				return {cell: m, score: -99};
+			}
+			else if (occupants.length == 1) {
+				var value = TEXT[occupants[0].type][5];		// higher means more desirable
+				return {cell: m, score: value - heu};
 			}
 			else {
-				u.moveTo(m);
+				return {cell: m, score: heu};
 			}
-		}
-		// TODO: delay using callback
-	}
 
-	chooseMove(moves) {
-		return moves.random();
-		// TODO choose a square with an enemy
-		//  AND not blocked enroute
-		//   OR square which intersects flag's validMoves
+		});
+		moves.sort((a,b) => b.score - a.score);
+		console.log(moves);
+		return moves.slice(0,3).random().cell;	// pick one of 3 best moves
+
+		// move on enemy flag if possible - YES (99 value)
+		// filter to valid squares with an enemy - YES (values > 0)
+		//  AND not blocked enroute - NO
+		//   prioritise by enemy value - YES
+		//    OR square which intersects flag's validMoves - TODO
+		// Heuristic: manhattan to opp flag (don't retreat) - YES
+		// Board valuation / target prices - YES
+		//
+		// Priest: select move, then samurai it if r()
+		// Golem:  select move, then spitball it
+		// Necro:  check 3x3 for injured allies
+		// Iceman: check 3x3 for enemy
 	}
 }
 
@@ -713,23 +763,29 @@ function endTurn() {
 	// Reset place/move/atts:
 	placed = [];
 	myMoves = [];
-	UI.drawTools();
 	// +1 health for all!
 	for (var u of units) {
 		if (u.hp < u.def) u.hp++;
 	}
-	// Countdown clock on depots increments:
-	// TODO
+	// Countdown clocks on depot units decrement:
+	Object.values(depots).forEach(depot => {
+		for (var du of depot) {
+			if (du.frozen > 0) du.frozen--;
+		}
+	});
+	UI.drawTools();
 
 	// Next player's turn:
 	myTurn = !myTurn;
 	if (myTurn) {
 		UI.setMode();
-		UI.msg(100, "Your turn, you little arse-goblin", 4);
+		UI.msg(100, "Your turn", 4);
+		console.log('idle...?');
+		// Game should be idle now, waiting for clicks (BUG)
 	}
 	else {
 		UI.setMode('ai');
-		UI.msg(700, "Satan is thinking...", 5);
+		UI.msg(600, "Satan is thinking...", 5);
 		opp.startTurn();
 	}
 }
@@ -738,12 +794,15 @@ function endTurn() {
 
 // Create everything:
 var b = new Board(11);
+// Flags:
+b.putFlag(0,0,0);
+b.putFlag(1,10,10);
 // Team 0's players:
 for (var t of baseSquad) new Unit(t,0);
 // AI's players:
 var opp = new AI();
-b.placeUnits(1,7);
-b.placeUnits(0,7);
+b.spawnUnits(1,7);
+b.spawnUnits(0,7);
 // Update:
 UI.drawTools();
 endTurn();
@@ -765,20 +824,23 @@ d.qa("#tools i").forEach(el => {
 	el.addEventListener('mouseout', () => { d.q("#info").innerHTML = ""; });
 	el.addEventListener('click', () => {
 		sounds.play('click');
-		if (el.parentNode[C].contains('disabled')) return;
+		if (el.parentNode[C].contains('disabled')) return;	// classList.contains() - specific method
 		if (placed.length > 2) return;
 		var type = el.classList[0];
 		UI.setMode('place-'+type);
 		selectedUnit = depots[0].filter(u => u.type == type)[0];
 	});
 });
-
 // Behaviours on cells:
 live('.valid', 'click', (evt) => {
 	sounds.play('click');
 	var tid = (evt.target.id.startsWith('x')) ? evt.target.id : evt.target.parentNode.id;
 	console.log(selectedUnit.id, 'directed to', tid);
-	selectedUnit.moveTo(unwrap(tid));
+	// Launch moving specials?
+	if (gameMode == 'spesh' && ['priest','golem'].includes(selectedUnit.type)) selectedUnit.doSpecial(unwrap(tid));
+	// Standard move:
+	else selectedUnit.moveTo(unwrap(tid));
+	// Cleanup:
 	selectedUnit = null;
 	UI.setMode();
 	b.unHighlight();

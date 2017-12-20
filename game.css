@@ -15,8 +15,8 @@ body {
 #msg {
 	text-align: center;
 	position: absolute;
-	border: 1px dashed blue;
 	transition: 1s top;
+	z-index: -1;
 }
 #msg canvas {
 	display: inline;
@@ -58,7 +58,8 @@ body {
 	position: relative;
 	cursor: pointer;
 }
-#tools > *:hover {
+#tools > *:hover,
+.spesh #spesh {
 	color: #ff0;
 	filter: brightness(1.2);
 }
@@ -164,10 +165,13 @@ i,b {
 	transform-origin: center bottom;
 	transform: rotateZ(-45deg) rotateY(60deg) translateX(50%) translateY(25%) scale(4);
 }
-b {
+b, #flag0, #flag1 {
 	transform: rotateZ(-45deg) rotateY(60deg) scale(5) translateX(13px) translateY(11px);
 	filter: hue-rotate(30deg);
 	pointer-events: none;
+}
+#flag1 {
+	filter: hue-rotate(210deg);
 }
 i > s {
 	display: block;
@@ -176,10 +180,15 @@ i > s {
 	image-rendering: pixelated;
 	pointer-events: none;	/* all clicks handled by parent */
 }
-i:hover {
+i.team0:hover {
 	filter: brightness(1.25)
-			drop-shadow(1px 1px 0 #ff0)
-			drop-shadow(-1px -1px 0 #ff0);
+			drop-shadow(1px 1px 0 #9f0)
+			drop-shadow(-1px -1px 0 #9f0);
+}
+i.team1:hover {
+	filter: brightness(1.25)
+			drop-shadow(1px 1px 0 #f09)
+			drop-shadow(-1px -1px 0 #f09);
 }
 i.special {
 	filter: drop-shadow(1px 1px 0 #fff)
@@ -193,7 +202,7 @@ i.special {
 	background: url(img/mush.gif) no-repeat;
 	width: 16px;
 	height: 16px;
-	margin: 12px 8px 4px;
+	margin: 16px 8px 0;
 }
 .qoblin s {
 	background: url(img/goblins.gif) no-repeat;
@@ -282,6 +291,11 @@ i.special {
 @keyframes grow {
 	100% 	 { transform: scale(2); }
 }
+.invert s { animation: 0.5s 2 invert; }
+@keyframes invert {
+	50% 	 { filter: invert() }
+}
+
 
 
 .move { cursor: move; }
