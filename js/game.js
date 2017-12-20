@@ -613,6 +613,15 @@ class Board {
 		console.log("Spawned this turn:", placed);
 	}
 
+	valueAround(centre, callingTeam) {
+		var area = new Unit('iceman', null, centre[0], centre[1])._validMoves();
+		return area
+		.map(m => b.at(m))
+		.map(list => list.length > 0 ? list[0] : false)
+		.map(u => u ? TEXT[u.type][5] * (u.team - 0.5) * (callingTeam - 0.5) : 0)
+		.reduce((a,b) => a + b);	// positive value for friendly units, negative for enemies
+	}
+
 	damage3x3(centre, hurt) {
 		// Find 9 cells:
 		var area = new Unit('iceman', null, centre[0], centre[1])._validMoves();
@@ -703,17 +712,30 @@ class AI {
 	}
 
 	movePiece(u) {
-		console.log(u);
-		// Check vMoves. Execute first which will hit an enemy.
-		var moves = u._validMoves();
-		var m = this.chooseMove(u, moves);
-		// Sometimes choose special
-		if (u.type != 'fireskull' && rand() > 0.8) {
-			if (u.type == 'priest' || u.type == 'golem') u.doSpecial(m);
-			else u.doSpecial();	// should check area first
+		var moves = u._validMoves(),
+			bestMove = this.chooseMove(u, moves),
+			localValue = b.valueAround(u.xy, u.team),
+			r = rand();
+		// Sometimes choose special:
+		// Local healing special:
+		if (u.type == 'necro' && localValue > 1 && r > 0.8) {
+			u.doSpecial();
 		}
+		// Local destructive special?
+		else if ((u.type == 'iceman' || u.type == 'mine') && localValue < -1 && r > 0.8) {
+			u.doSpecial();
+		}
+		// Targeted special:
+		else if ((u.type == 'priest' || u.type == 'golem') && r > 0.8) {
+			u.doSpecial(bestMove);
+		}
+		// Goblin special:
+		else if (u.type != 'fireskull' && r > 0.8) {
+			u.doSpecial();
+		}
+		// Default for all units:
 		else {
-			u.moveTo(m);
+			u.moveTo(bestMove);
 		}
 	}
 
@@ -721,6 +743,7 @@ class AI {
 		moves = moves.map(m => {
 			// Distance from move terminus to flag:
 			var heu = b.manhattan(m, unwrap(d.q("#flag0").parentNode.id));		// lower heu more desirable
+
 			// Value of occupants:
 			var occupants = b.at(m);
 			console.log(m, heu, occupants);
@@ -735,7 +758,6 @@ class AI {
 			else {
 				return {cell: m, score: heu};
 			}
-
 		});
 		moves.sort((a,b) => b.score - a.score);
 		console.log(moves);

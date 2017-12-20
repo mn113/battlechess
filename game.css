@@ -66,6 +66,8 @@ body {
 #tools i {
 	transform: none;
 }
+#tools i.mine s { margin-top: 8px; }
+#tools i.qoblin s { margin-top: 4px; }
 .disabled {
 	filter: grayscale();
 	cursor: not-allowed;
