@@ -297,8 +297,26 @@ i.special {
 @keyframes invert {
 	50% 	 { filter: invert() }
 }
-
-
+.ring {
+	position: absolute;
+	display: block;
+	width: 4px;
+	height: 4px;
+	border-radius: 50%;
+	border: 5px dotted;
+	border-color: #03f #36f #69f #9cf;
+	opacity: 0.8;
+	transform-origin: center;
+	transform: scale(1) rotate(0deg);
+	filter: blur(0);
+}
+.expanding { animation: 1s 1 grow3x; }
+@keyframes grow3x {
+	100% 	 { transform: scale(6) rotate(720deg); filter: blur(3px); }
+}
+.spell {
+	filter: invert();
+}
 
 .move { cursor: move; }
 .place-mine,

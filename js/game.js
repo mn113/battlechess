@@ -157,7 +157,11 @@ class Unit {
 			e.stopPropagation();
 			sounds.play('click');
 
-			if (gameMode == 'move-'+this.id || myMoves.includes(this.id)) this.rotate();
+			// Ignore mines, allow walk-ons:
+			if (gameMode.startsWith('move') && this.type == 'mine') this.el.parentNode.click();
+			// Disallow moving twice:
+			else if (gameMode == 'move-'+this.id || myMoves.includes(this.id)) this.rotate();
+			// Launch static specials:
 			else if (gameMode == 'spesh' && !['priest','golem'].includes(this.type)) this.doSpecial();
 			else {
 				// Highlight the valid cells we can move to:
@@ -288,7 +292,7 @@ class Unit {
 					// Check next cell, who is there?
 					var nextCell = route.shift(),
 						obsts = b.at(nextCell);
-					if (obsts.some(o => o.team === this.team)) {
+					if (obsts.some(o => o.team === this.team && o.type != 'mine')) {
 						// path blocked
 						console.log("blocked at", nextCell);
 						this._finishMove();
@@ -469,6 +473,7 @@ class Unit {
 			case 'necro':
 				// healing spell 3x3 instant
 				sounds.play('spell');
+				b.ringEffect(this.xy);
 				this.fx('spell', 1000, () => {
 					b.damage3x3(this.xy, -2);
 				});
@@ -645,8 +650,17 @@ class Board {
 		$fx[C].add('jiggle');
 		st(() => { $fx[C].remove('jiggle'); }, 1000);
 	}
-}
 
+	ringEffect(centre) {
+		var ring = d.e('u');
+		d.q("#animLayer").appendChild(ring);
+		ring.style.left = (centre[0] + 0.5) * 50 + "px";
+		ring.style.top  = (centre[1] + 0.5) * 50 + "px";
+		ring[C].add("ring");
+		ring[C].add("expanding");
+		//st(() => { ring.remove(); }, 1000);
+	}
+}
 
 // Utility class for drawing and managing UI state
 class UI {
@@ -657,7 +671,9 @@ class UI {
 		d.qa("#tools li").forEach((li, i) => {
 			var n = depotCounts[i];
 			li.lastChild.innerHTML = n;
-			if (n < 1) li[C].add('disabled');
+			if (n < 1) {
+				li[C].add('disabled');
+			}
 		});
 		d.q("#moves").innerHTML = NUMS[3 - myMoves.length]+" MOVES";
 	}
