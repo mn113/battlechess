@@ -56,7 +56,7 @@ var rand = Math.random;
 //const PIECES = ["🤖","👻","😈","👹","🦄","🐲","🐍","💣","🕸️","🏂"];
 //const WEAP = ["🔪","🗡️","🔫","⛏️"];
 const PLANTS = ["🎄","🌲","🌳","🌵"];
-const SPESH = ["💥","🛡️","⛸️","⚫","🔮","⚕️","💢"];
+//const SPESH = ["💥","🛡️","⛸️","⚫","🔮","⚕️","💢"];
 const NUMS = ["0⃣","1⃣","2⃣","️3⃣"];
 const COLOURS = [
 	"#6B8E23","#7B8E23","#5B8E33","#6B7E13"
@@ -76,9 +76,8 @@ const TEXT = {	// key : [Name, Movement, Attack, Special, value]
 	"iceman": ["Ice Demon", "Moves 1 step in all 8 directions", "strong", "strong", "His jump causes a damaging earthquake", -1],
 	"flag": ["Flag", "Capture this!", "Defend this!", null, null, 99]
 };
-
 const TYPES = ["mine","qoblin","fireskull","priest","golem","necro","iceman"];
-const BASES = [2,4,2,2,2,1,1];
+const QUOTAS = [2,4,2,2,2,1,1];
 const baseSquad = "mine,mine,qoblin,qoblin,qoblin,qoblin,fireskull,fireskull,priest,priest,golem,golem,necro,iceman".split(",");
 
 var gameMode;		// place-, move-, spesh, ai
@@ -87,8 +86,8 @@ var selectedUnit;
 var depots = {0: [], 1: []};
 var guid = 0;
 var myTurn = false;
-var myMoves = [];	// 3 ids per turn
-var placed = [];	// 3 ids per turn
+var myMoves = [];	// holds up to 3 ids per turn, then cleared
+var placed = [];	// holds up to 3 ids per turn, then cleared
 
 // Sounds
 var sounds = {
@@ -184,6 +183,7 @@ class Unit {
 
 	// Calculate all valid squares this piece can move to from here:
 	_validMoves() {
+		var vMoves;
 		// NOTE: inefficient to calc all these options when only 1 or 2 needed for a given type
 		var orth4 = this._addTo([[0,1],[1,0],[0,-1],[-1,0]]);
 		var diag4 = this._addTo([[1,1],[-1,-1],[1,-1],[-1,1]]);
@@ -194,14 +194,16 @@ class Unit {
 		var diagAllLtd = diagAll.filter(c => b.manhattan(c, this.xy) < 12);
 
 		switch(this.type) {
-			case 'mine': return [];
-			case 'qoblin': return orth4;
-			case 'fireskull': return doglegs;
-			case 'priest': return diagAllLtd;
-			case 'golem': return orthAllLtd;
-			case 'necro': return orthAll.concat(diagAll);
-			case 'iceman': return orth4.concat(diag4);
+			case 'mine': vMoves = []; break;
+			case 'qoblin': vMoves = orth4; break;
+			case 'fireskull': vMoves = doglegs; break;
+			case 'priest': vMoves = diagAllLtd; break;
+			case 'golem': vMoves = orthAllLtd; break;
+			case 'necro': vMoves = orthAll.concat(diagAll); break;
+			case 'iceman': vMoves = orth4.concat(diag4); break;
 		}
+		// Allow same-cell interactions:
+		return vMoves.concat([this.xy]);
 	}
 
 	// Put unit in board square. Also check how to handle what is there:
@@ -568,6 +570,7 @@ class Board {
 
 	// Give a group of squares 'valid' class
 	highlight(cells) {
+		console.log(cells);
 		cells.forEach(c => d.q("#x"+c[0]+"y"+c[1])[C].add('valid'));
 	}
 
@@ -658,7 +661,7 @@ class Board {
 		ring.style.top  = (centre[1] + 0.5) * 50 + "px";
 		ring[C].add("ring");
 		ring[C].add("expanding");
-		//st(() => { ring.remove(); }, 1000);
+		st(() => { ring.remove(); }, 1000);
 	}
 }
 
@@ -873,16 +876,26 @@ d.qa("#tools i").forEach(el => {
 live('.valid', 'click', (evt) => {
 	sounds.play('click');
 	var tid = (evt.target.id.startsWith('x')) ? evt.target.id : evt.target.parentNode.id;
+	var targ = unwrap(tid);
 	console.log(selectedUnit.id, 'directed to', tid);
-	// Launch moving specials?
-	if (gameMode == 'spesh' && ['priest','golem'].includes(selectedUnit.type)) selectedUnit.doSpecial(unwrap(tid));
-	// Standard move:
-	else selectedUnit.moveTo(unwrap(tid));
+	var d = b.manhattan(selectedUnit.xy, targ);
+	if (d === 0) {
+		// Same-cell melee?
+		console.log('SAME CELL!!');
+		if (evt.target[C].contains('team1')) selectedUnit.placeAt(targ);	// triggers melee
+	}
+	else {
+		// Launch moving specials?
+		if (gameMode == 'spesh' && ['priest','golem'].includes(selectedUnit.type)) selectedUnit.doSpecial(targ);
+		// Standard move:
+		else selectedUnit.moveTo(targ);
+	}
 	// Cleanup:
 	selectedUnit = null;
 	UI.setMode();
 	b.unHighlight();
 });
+// Click to place new units:
 live('.team0spawn', 'click', (evt) => {
 	sounds.play('click');
 	if (gameMode.startsWith('place-')) {
