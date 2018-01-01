@@ -79,6 +79,7 @@ const TEXT = {	// key : [Name, Movement, Attack, Special, value]
 const TYPES = ["mine","qoblin","fireskull","priest","golem","necro","iceman"];
 const QUOTAS = [2,4,2,2,2,1,1];
 const baseSquad = "mine,mine,qoblin,qoblin,qoblin,qoblin,fireskull,fireskull,priest,priest,golem,golem,necro,iceman".split(",");
+// TODO: zip TYPES & QUOTAS to make baseSquad
 
 var gameMode;		// place-, move-, spesh, ai
 var units = [];
@@ -732,9 +733,14 @@ class AI {
 	}
 
 	movePiece(u) {
+		var r = rand();
+
+		// Usually Melee if we have company:
+		console.log(b.at(u.xy));
+		if (b.at(u.xy).length > 1) u.placeAt(u.xy); //&& rand() > .2
+
 		var bestMove = this.chooseMove(u),
-			localValue = b.valueAround(u.xy, u.team),
-			r = rand();
+			localValue = b.valueAround(u.xy, u.team);
 		// Sometimes choose special:
 		// Local healing special:
 		if (u.type == 'necro' && localValue > 1 && r > 0.8) {
@@ -765,7 +771,7 @@ class AI {
 
 			// Value of occupants:
 			var occupants = b.at(m);
-			console.log(m, heu, occupants);
+			if (occupants.length > 0) console.log(m, heu, occupants);
 
 			if (occupants.length > 1) {
 				return {cell: m, score: -99};
@@ -789,6 +795,7 @@ class AI {
 		//    OR square which intersects flag's validMoves - TODO
 		// Heuristic: manhattan to opp flag (don't retreat) - YES
 		// Board valuation / target prices - YES
+		// Fight enemy in own cell - TODO
 		//
 		// Priest: select move, then samurai it if r()
 		// Golem:  select move, then spitball it
