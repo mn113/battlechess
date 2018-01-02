@@ -288,6 +288,7 @@ class Unit {
 		else {
 			// Calculate animation path, must go square by square:
 			var route = b.findRoute(this.xy, dest);
+			var stepsTaken = 0;
 			console.log(route);
 			// Walk loop:
 			var step = function() {
@@ -298,9 +299,13 @@ class Unit {
 					if (obsts.some(o => o.team === this.team && o.type != 'mine')) {
 						// path blocked
 						console.log("blocked at", nextCell);
-						this._finishMove();
+						if (stepsTaken > 0) this._finishMove();
 					}
-					else this._stepTo(nextCell, step);
+					else {
+						stepsTaken++;
+						console.log(stepsTaken, 'steps');
+						this._stepTo(nextCell, step);
+					}
 				}
 				else {
 					// No more route...
