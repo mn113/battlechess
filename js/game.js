@@ -406,18 +406,23 @@ class Unit {
 	// Take off HP and do necessary visuals & admin:
 	hurt(amount) {
 		this.hp -= amount;
-		this.fx('flash');
-		sounds.play('hurt');
+		if (amount > 0) {
+			// Death if too low:
+			if (this.hp < 0) st(() => { this.remove(); }, 750);
+			this.fx('flash');
+			sounds.play('hurt');
+		}
+		else {
+			// Maxed if too high:
+			if (this.hp > this.def) this.hp == this.def;
+		}
 		this.showHealthBar();
-		// Death if too low, maxed if too high:
-		if (this.hp < 0) st(() => { this.remove(); }, 750);
-		else if (this.hp > this.def) this.hp == this.def;
 	}
 
 	// Briefly visualise unit's health:
 	showHealthBar() {
 		if (this.type == 'mine') return;
-		var pct = 25 * Math.ceil(4 * this.hp / this.def);		// limit percentages to 25,50,75,100
+		var pct = 25 * Math.ceil(4 * this.hp / this.def);	// limit percentages to 25,50,75,100
 		var $bar = d.e("figure");
 		$bar[C].add('p'+pct);
 		$bar.innerHTML = this.id + " p" + pct;
@@ -459,6 +464,7 @@ class Unit {
 
 	// Execute or enable the special move:
 	doSpecial(target) {
+		var route;
 		switch(this.type) {
 			case 'mine':
 				// BIG boom 3x3 instant
@@ -475,7 +481,7 @@ class Unit {
 				break;
 
 			case 'priest':
-				var route = b.findRoute(this.xy, target);
+				route = b.findRoute(this.xy, target);
 				this._flyTo(target, 600, () => {
 					// Damage occupants en-route:
 					for (var i = 0; i < route.length; i++) {
@@ -486,7 +492,7 @@ class Unit {
 
 			case 'golem':
 				// spit rock to target - requires validmoves & targeting cursor
-				var route = b.findRoute(this.xy, target);
+				route = b.findRoute(this.xy, target);
 				var rock = d.e('b');
 				rock.innerHTML = "⚫";
 				d.q("#animLayer").appendChild(rock);
