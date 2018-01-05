@@ -752,14 +752,26 @@ class UI {
 		b.unHighlight();
 	}
 
-	static msg(offset, text, scale) {
-		$msg.innerHTML = "";
-		$msg.appendChild(pixCanv(text, scale));
-		$msg.style.top = offset+"px";
+	static msg(offset, text, scale, target = $msg, clear = true) {
+		if (clear) target.innerHTML = "";
+		var $p = pixCanv(text, scale);
+		target.style.top = offset;
+		target.appendChild($p);
+		return $p;
 	}
 
-	static title(w1,w2) {
-
+	static title(word1, word2) {
+		var $title = d.q("#title"),
+			$p1 = UI.msg("unset", word1, 15, $title),
+			$p2 = UI.msg("unset", word2, 15, $title, false);
+		// Animate in:
+		TinyAnimate.animateCSS(
+			$title, 'height', 'vh', 100, 30,
+			999, 'linear'
+		);
+		$title.addEventListener('click', () => {
+			$title.remove();
+		});
 	}
 }
 
@@ -889,13 +901,13 @@ function endTurn() {
 	myTurn = !myTurn;
 	if (myTurn) {
 		UI.setMode();
-		UI.msg(100, "Your turn", 4);
+		UI.msg("100px", "Your turn", 4);
 		console.log('idle...?');
 		// Game should be idle now, waiting for clicks (BUG)
 	}
 	else {
 		UI.setMode('ai');
-		UI.msg(600, "Satan is thinking...", 5);
+		UI.msg("600px", "Satan is thinking...", 5);
 		opp.startTurn();
 	}
 }
@@ -916,6 +928,8 @@ b.spawnUnits(0,7);
 // Update:
 UI.drawTools();
 endTurn();
+
+UI.title('Battle', 'Chess');
 
 // Tools behaviours:
 d.qa("#tools i").forEach(el => {
