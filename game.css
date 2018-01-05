@@ -185,15 +185,23 @@ i > s {
 i.team0:hover {
 	filter: brightness(1.25)
 			drop-shadow(1px 1px 0 #9f0)
+			drop-shadow(-1px 1px 0 #9f0)
+			drop-shadow(1px -1px 0 #9f0)
 			drop-shadow(-1px -1px 0 #9f0);
 }
 i.team1:hover {
 	filter: brightness(1.25)
 			drop-shadow(1px 1px 0 #f09)
+			drop-shadow(-1px 1px 0 #f09)
+			drop-shadow(1px -1px 0 #f09)
 			drop-shadow(-1px -1px 0 #f09);
 }
+.spesh i.team0:hover,
 i.special {
-	filter: drop-shadow(1px 1px 0 #fff)
+	filter: brightness(1.25)
+			drop-shadow(1px 1px 0 #fff)
+			drop-shadow(-1px 1px 0 #fff)
+			drop-shadow(1px -1px 0 #fff)
 			drop-shadow(-1px -1px 0 #fff);
 }
 .team1 s {
@@ -326,7 +334,8 @@ i.special {
 .place-golem,
 .place-necro,
 .place-iceman { cursor: copy; }
-.ai * {
+.spesh i.team0 { cursor: all-scroll; }
+.team1 {
 	pointer-events: none;
 	cursor: not-allowed;
 }

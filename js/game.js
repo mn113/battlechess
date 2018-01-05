@@ -161,8 +161,19 @@ class Unit {
 			if (gameMode.startsWith('move') && this.type == 'mine') this.el.parentNode.click();
 			// Disallow moving twice:
 			else if (gameMode == 'move-'+this.id || myMoves.includes(this.id)) this.rotate();
-			// Launch static specials:
-			else if (gameMode == 'spesh' && !['priest','golem'].includes(this.type)) this.doSpecial();
+			// Prepare for specials:
+			else if (gameMode == 'spesh') {
+				if (this.type == 'priest' || this.type == 'golem') {
+					// Targeted specials:
+					selectedUnit = this;
+					UI.setMode('spesh-'+this.id);
+					this.vMoves = this.vMoves || this._validMoves();
+					b.highlight(this.vMoves);
+				}
+				else if (this.type == 'fireskull') UI.setMode();
+				// Static special init:
+				else this.doSpecial();
+			}
 			else {
 				// Highlight the valid cells we can move to:
 				selectedUnit = this;
@@ -191,7 +202,7 @@ class Unit {
 		var doglegs = this._addTo([[2,1],[2,-1],[-2,1],[-2,-1],[1,2],[1,-2],[-1,2],[-1,-2]]);
 		var orthAll = b.cells.filter(c => c[0] == this.x || c[1] == this.y);
 		var diagAll = b.cells.filter(c => Math.abs(c[0] - this.x) == Math.abs(c[1] - this.y));
-		var orthAllLtd = orthAll.filter(c => b.manhattan(c, this.xy) < 4);
+		var orthAllLtd = orthAll.filter(c => b.manhattan(c, this.xy) < 6);
 		var diagAllLtd = diagAll.filter(c => b.manhattan(c, this.xy) < 12);
 
 		switch(this.type) {
@@ -460,7 +471,7 @@ class Unit {
 
 			case 'qoblin':
 				// add shield class
-				this.el[C].add("shield");
+				this.el[C].add("shield");	// FIXME
 				break;
 
 			case 'priest':
@@ -475,7 +486,38 @@ class Unit {
 
 			case 'golem':
 				// spit rock to target - requires validmoves & targeting cursor
-				// TODO
+				var route = b.findRoute(this.xy, target);
+				var rock = d.e('b');
+				rock.innerHTML = "⚫";
+				d.q("#animLayer").appendChild(rock);
+				rock.style.left = (this.x + 0.5) * 50 + "px";
+				rock.style.top = (this.y + 0.5) * 50 + "px";
+
+				// CODE FROM Unit._flyTo():
+				// Calculate final x/y:
+				var cx = (this.x + 0.5) * 50,
+					cy = (this.y + 0.5) * 50;	// CELL WIDTH
+				var zx = (target[0] + 0.5) * 50,
+					zy = (target[1] + 0.5) * 50;
+
+				// Then animate 2 simultaneous transforms for top & left:
+				TinyAnimate.animateCSS(
+					rock, 'left', 'px', cx, zx,
+					999, 'linear'
+				);
+				TinyAnimate.animateCSS(
+					rock, 'top', 'px', cy, zy,
+					999, 'linear',
+					// when done:
+					() => {
+						rock.parentNode.removeChild(rock);
+						// Damage occupants en-route:
+						for (var i = 0; i < route.length; i++) {
+							b.damageCell(route[i], [4,4,3,3,2,2,1,1][i]);
+						}
+					}
+				);
+
 				break;
 
 			case 'necro':
@@ -628,6 +670,7 @@ class Board {
 		console.log("Spawned this turn:", placed);
 	}
 
+	// Assess value of units in a 3x3 box:
 	valueAround(centre, callingTeam) {
 		var area = new Unit('iceman', null, centre[0], centre[1])._validMoves();
 		return area
@@ -637,6 +680,7 @@ class Board {
 		.reduce((a,b) => a + b);	// positive value for friendly units, negative for enemies
 	}
 
+	// Hurt all units in a 3x3 box:
 	damage3x3(centre, hurt) {
 		// Find 9 cells:
 		var area = new Unit('iceman', null, centre[0], centre[1])._validMoves();
@@ -644,6 +688,7 @@ class Board {
 		for (var sq of area) b.damageCell(sq, hurt);
 	}
 
+	// Hurt an individual cell's units:
 	damageCell(point, hurt) {
 		// Find units, damage them:
 		var $div = d.q("#x"+point[0]+"y"+point[1]);
@@ -660,6 +705,7 @@ class Board {
 		st(() => { $fx[C].remove('jiggle'); }, 1000);
 	}
 
+	// Expanding circle effect:
 	ringEffect(centre) {
 		var ring = d.e('u');
 		d.q("#animLayer").appendChild(ring);
@@ -670,6 +716,7 @@ class Board {
 		st(() => { ring.remove(); }, 1000);
 	}
 }
+
 
 // Utility class for drawing and managing UI state
 class UI {
@@ -703,6 +750,10 @@ class UI {
 		$msg.innerHTML = "";
 		$msg.appendChild(pixCanv(text, scale));
 		$msg.style.top = offset+"px";
+	}
+
+	static title(w1,w2) {
+
 	}
 }
 
@@ -890,18 +941,20 @@ live('.valid', 'click', (evt) => {
 	var tid = (evt.target.id.startsWith('x')) ? evt.target.id : evt.target.parentNode.id;
 	var targ = unwrap(tid);
 	console.log(selectedUnit.id, 'directed to', tid);
-	var d = b.manhattan(selectedUnit.xy, targ);
-	if (d === 0) {
-		// Same-cell melee?
+
+	if (b.manhattan(selectedUnit.xy, targ) === 0) {
+		// Same-cell melee:
 		console.log('SAME CELL!!');
 		if (evt.target[C].contains('team1')) selectedUnit.placeAt(targ);	// triggers melee
 	}
-	else {
-		// Launch moving specials?
-		if (gameMode == 'spesh' && ['priest','golem'].includes(selectedUnit.type)) selectedUnit.doSpecial(targ);
-		// Standard move:
-		else selectedUnit.moveTo(targ);
+	else if (gameMode.startsWith('spesh') && ['priest','golem'].includes(selectedUnit.type)) {
+		// Launch moving special:
+		console.log('SPECIAL!');
+		selectedUnit.doSpecial(targ);
 	}
+	// Standard move:
+	else selectedUnit.moveTo(targ);
+
 	// Cleanup:
 	selectedUnit = null;
 	UI.setMode();
