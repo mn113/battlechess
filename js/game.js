@@ -415,7 +415,7 @@ class Unit {
 		}
 		else {
 			// Maxed if too high:
-			if (this.hp > this.def) this.hp == this.def;
+			if (this.hp > this.def) this.hp = this.def;
 		}
 		this.showHealthBar();
 	}
