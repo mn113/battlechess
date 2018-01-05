@@ -386,6 +386,7 @@ class Unit {
 
 	// Simulate a fight between 2 units; apply damage:
 	melee(enemy) {
+		this.fx('special', 600);
 		console.log(enemy);
 		var att1 = this.att + [-1,1].random(),
 			def1 = this.def,
