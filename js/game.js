@@ -752,7 +752,7 @@ class UI {
 		b.unHighlight();
 	}
 
-	static msg(offset, text, scale, target = $msg, clear = true) {
+	static msg(offset, text, scale, target=$msg, clear=true) {
 		if (clear) target.innerHTML = "";
 		var $p = pixCanv(text, scale);
 		target.style.top = offset;
@@ -761,9 +761,9 @@ class UI {
 	}
 
 	static title(word1, word2) {
-		var $title = d.q("#title"),
-			$p1 = UI.msg("unset", word1, 15, $title),
-			$p2 = UI.msg("unset", word2, 15, $title, false);
+		var $title = d.q("#title");
+		UI.msg("unset", word1, 15, $title);
+		UI.msg("unset", word2, 15, $title, false);
 		// Animate in:
 		TinyAnimate.animateCSS(
 			$title, 'height', 'vh', 100, 30,
@@ -802,8 +802,8 @@ class AI {
 	}
 
 	placeUnits() {
-		// Place new units until no longer possible:
-		b.spawnUnits(1, Math.min(14 - depots[1].length, [1,2,3].random()));
+		// Place new units while possible:
+		b.spawnUnits(1, Math.min(14 - depots[1].length, [1,2].random()));
 	}
 
 	movePiece(u) {
@@ -949,7 +949,7 @@ d.qa("#tools i").forEach(el => {
 	el.addEventListener('click', () => {
 		sounds.play('click');
 		if (el.parentNode[C].contains('disabled')) return;	// classList.contains() - specific method
-		if (placed.length > 2) return;
+		if (placed.length >= 2) return;
 		var type = el.classList[0];
 		UI.setMode('place-'+type);
 		selectedUnit = depots[0].filter(u => u.type == type)[0];
