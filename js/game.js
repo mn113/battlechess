@@ -15,7 +15,8 @@ Array.prototype.shuffle = function() {
 };
 // helper for enabling IE 8 event bindings
 function addEvent(el, type, handler) {
-	if (el.attachEvent) el.attachEvent('on'+type, handler); else el.addEventListener(type, handler);
+	if (el.attachEvent) el.attachEvent('on'+type, handler);
+	else el.addEventListener(type, handler);
 }
 // live binding helper using matchesSelector
 function live(selector, event, callback, context) {
@@ -56,7 +57,6 @@ var rand = Math.random;
 //const PIECES = ["🤖","👻","😈","👹","🦄","🐲","🐍","💣","🕸️","🏂"];
 //const WEAP = ["🔪","🗡️","🔫","⛏️"];
 const PLANTS = ["🎄","🌲","🌳","🌵"];
-//const SPESH = ["💥","🛡️","⛸️","⚫","🔮","⚕️","💢"];
 const NUMS = ["0⃣","1⃣","2⃣","️3⃣"];
 const COLOURS = [
 	"#6B8E23","#7B8E23","#5B8E33","#6B7E13"
@@ -64,7 +64,6 @@ const COLOURS = [
 const TRANSP = [
 	"rgba(130,180,110,0.7)", "rgba(150,180,110,0.7)", "rgba(130,160,110,0.7)"
 ];
-
 // Text
 const TEXT = {	// key : [Name, Movement, Attack, Special, value]
 	"mine": ["Mineshroom", "None", "Explodes when stepped on", "N/A", "Triggers a big explosion with more damage", -3],
@@ -77,9 +76,8 @@ const TEXT = {	// key : [Name, Movement, Attack, Special, value]
 	"flag": ["Flag", "Capture this!", "Defend this!", null, null, 99]
 };
 const TYPES = ["mine","qoblin","fireskull","priest","golem","necro","iceman"];
-const QUOTAS = [2,4,2,2,2,1,1];
+//const QUOTAS = [2,4,2,2,2,1,1];
 const baseSquad = "mine,mine,qoblin,qoblin,qoblin,qoblin,fireskull,fireskull,priest,priest,golem,golem,necro,iceman".split(",");
-// TODO: zip TYPES & QUOTAS to make baseSquad
 
 var gameMode;		// place-, move-, spesh, ai
 var units = [];
@@ -309,8 +307,9 @@ class Unit {
 						obsts = b.at(nextCell);
 					if (obsts.some(o => o.team === this.team && o.type != 'mine')) {
 						// path blocked
-						console.log("blocked at", nextCell);
+						console.log("blocked at", nextCell);	// BUG: AI BLOCKS
 						if (stepsTaken > 0) this._finishMove();
+						else this._finishMove(false);
 					}
 					else {
 						stepsTaken++;
@@ -329,12 +328,12 @@ class Unit {
 	}
 
 	// Admin when movement & combat is completed:
-	_finishMove() {
+	_finishMove(logIt=true) {
 		console.log('_finishMove');
 		b.unHighlight();
 		this.vMoves = this._validMoves();
 		this.face(this.team == 0 ? 'ss' : 'nn');
-		this.logMove();
+		if (logIt) this.logMove();
 	}
 
 	// Move to an adjacent square:
@@ -451,7 +450,7 @@ class Unit {
 		this.x = null;
 		this.y = null;
 		this.xy = null;
-		this.frozen = 3;
+		this.frozen = 5;
 	}
 
 	// Applies visual effect by adding & removing animation class
@@ -664,8 +663,8 @@ class Board {
 	// Auto-Spawn a number of units for one team:
 	spawnUnits(team, num) {
 		var spawns = d.qa(".team"+team+"spawn");
-		// Get num units from this team's depot:
-		depots[team].shuffle().slice(0,num)
+		// Get num unfrozen units from this team's depot:
+		depots[team].filter(u => !u.frozen).shuffle().slice(0,num)
 		.forEach(u => {
 			// Find an empty spawnable cell:
 			do {
@@ -734,9 +733,8 @@ class UI {
 		d.qa("#tools li").forEach((li, i) => {
 			var n = depotCounts[i];
 			li.lastChild.innerHTML = n;
-			if (n < 1) {
-				li[C].add('disabled');
-			}
+			if (n < 1) li[C].add('disabled');
+			else li[C].remove('disabled');
 		});
 		d.q("#moves").innerHTML = NUMS[3 - myMoves.length]+" MOVES";
 	}
@@ -799,7 +797,8 @@ class AI {
 		st(() => { this.movePiece(toMove[0]); }, 1500);
 		st(() => { this.movePiece(toMove[1]); }, 3500);
 		st(() => { this.movePiece(toMove[2]); }, 5500);
-		//st(() => { endTurn(); }, 7500);
+		// fallback in case fewer than 3 moves were logged:
+		st(() => { if (!myTurn) endTurn(); }, 7500);
 	}
 
 	placeUnits() {
