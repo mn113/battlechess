@@ -312,9 +312,8 @@ class Unit {
 						obsts = b.at(nextCell);
 					if (obsts.some(o => o.team === this.team && o.type != 'mine')) {
 						// path blocked
-						console.log("blocked at", nextCell);	// BUG: AI BLOCKS
-						if (stepsTaken > 0) this._finishMove();
-						else this._finishMove(false);
+						console.log("blocked at", nextCell);
+						this._finishMove(stepsTaken > 0);	// only log if steps
 					}
 					else {
 						stepsTaken++;
@@ -346,7 +345,6 @@ class Unit {
 	_stepTo(dest, cb) {
 		sounds.play('move');
 		this._flyTo(dest, 300, cb);
-		//if (cb) setTimeout(cb, 315);
 	}
 
 	// Animate to destination directly, as the crow flies, ignoring obstacles:
@@ -442,7 +440,7 @@ class Unit {
 	explode() {
 		sounds.play('boom');
 		// CSS animation for blur
-		this.fx('exploding', 900, () => {
+		this.fx('explode', 900, () => {
 			this.remove();
 		});
 	}
@@ -459,7 +457,7 @@ class Unit {
 		this.frozen = 5;
 	}
 
-	// Applies visual effect by adding & removing animation class
+	// Apply visual effect by adding & removing animation class:
 	fx(name, t=1000, cb) {
 		this.el[C].add(name);
 		st(() => {
@@ -743,6 +741,15 @@ class Board {
 		ring[C].add("expanding");
 		st(() => { ring.remove(); }, 1000);
 	}
+
+	// Get a flag's location, whether it's on board or carried:
+	findFlag(team) {
+		var flag = (team) ? $f0 : $f1;
+		if (units.some(u => u.hasFlag && u.enemy === team)) {
+			return unwrap(flag.parentNode.parentNode.parentNode.id);
+		}
+		else return unwrap(flag.parentNode.id);
+	}
 }
 
 
@@ -847,7 +854,7 @@ class AI {
 			u.doSpecial();
 		}
 		// Targeted special:
-		else if ((u.type == 'priest' || u.type == 'golem') && r > 0.8) {
+		else if ((u.type == 'priest') && r > 0.8) {
 			u.doSpecial(bestMove);
 		}
 		// Default for all units:
@@ -863,7 +870,7 @@ class AI {
 
 		var moves = unit._validMoves().map(m => {
 			// Distance from move terminus to flag:
-			var heu = b.manhattan(m, unwrap($f0.parentNode.id));		// lower heu more desirable
+			var heu = b.manhattan(m, b.findFlag(1));		// lower heu more desirable
 
 			// Value of occupants:
 			var occupants = b.at(m);
@@ -874,13 +881,13 @@ class AI {
 			}
 			else if (occupants.length == 1) {
 				var value = TEXT[occupants[0].type][5];		// higher means more desirable
-				return {cell: m, score: value - heu};
+				return {cell: m, score: heu - value};
 			}
 			else {
 				return {cell: m, score: heu};
 			}
 		});
-		moves.sort((a,b) => b.score - a.score);
+		moves.sort((a,b) => a.score - b.score);
 		console.log(moves);
 		return moves.slice(0,3).random().cell;	// pick one of 3 best moves
 
