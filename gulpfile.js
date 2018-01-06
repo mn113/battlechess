@@ -18,7 +18,6 @@ gulp.task('minify-concat-js', function () {
 		"jsfxr.min.js",
 		"pixelfont.min.js",
 		"TinyAnimate.min.js",
-		"viper.min.js",		// delete
 		"game.js"
 	]))
 	.pipe(uglify())
