@@ -173,6 +173,9 @@ p canvas {
 .valid {
 	filter: brightness(1.33);
 }
+.valid:hover {
+	filter: brightness(1.66);
+}
 #ga > div.team0spawn { border-color: #444; background: rgba(195,175,0,.5); }
 #ga > div.team1spawn { border-color: #444; background: rgba(175,95,175,.3); }
 i,b {
@@ -197,6 +200,7 @@ i > s {
 	height: 32px;
 	image-rendering: pixelated;
 	pointer-events: none;	/* all clicks handled by parent */
+    text-decoration: none;
 }
 s > #flag0,
 s > #flag1 {	/* captured flag */
@@ -245,7 +249,6 @@ i.special {
 	width: 18px;
 	height: 32px;
 	margin: 0 7px;
-	xanimation: vertbob 1.5s infinite;
 }
 .priest s {
 	background: url(img/priests.gif) no-repeat;

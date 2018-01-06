@@ -850,10 +850,6 @@ class AI {
 		else if ((u.type == 'priest' || u.type == 'golem') && r > 0.8) {
 			u.doSpecial(bestMove);
 		}
-		// Goblin special:
-		else if (u.type != 'fireskull' && r > 0.8) {
-			u.doSpecial();
-		}
 		// Default for all units:
 		else {
 			u.moveTo(bestMove);
@@ -861,6 +857,10 @@ class AI {
 	}
 
 	chooseMove(unit) {
+		// Fight an enemy in your cell:
+		var localEnemies = b.at(unit.xy).filter(en => en.team !== unit.team);
+		if (localEnemies.length > 0) return unit.xy;
+
 		var moves = unit._validMoves().map(m => {
 			// Distance from move terminus to flag:
 			var heu = b.manhattan(m, unwrap($f0.parentNode.id));		// lower heu more desirable
@@ -870,7 +870,7 @@ class AI {
 			if (occupants.length > 0) console.log(m, heu, occupants);
 
 			if (occupants.length > 1) {
-				return {cell: m, score: -99};
+				return {cell: m, score: -99};	// don't go to overcrowded cells
 			}
 			else if (occupants.length == 1) {
 				var value = TEXT[occupants[0].type][5];		// higher means more desirable
@@ -884,6 +884,7 @@ class AI {
 		console.log(moves);
 		return moves.slice(0,3).random().cell;	// pick one of 3 best moves
 
+		// Fight enemy in own cell - YES
 		// move on enemy flag if possible - YES (99 value)
 		// filter to valid squares with an enemy - YES (values > 0)
 		//  AND not blocked enroute - NO
@@ -891,7 +892,6 @@ class AI {
 		//    OR square which intersects flag's validMoves - TODO
 		// Heuristic: manhattan to opp flag (don't retreat) - YES
 		// Board valuation / target prices - YES
-		// Fight enemy in own cell - TODO
 		//
 		// Priest: select move, then samurai it if r()
 		// Golem:  select move, then spitball it
@@ -924,8 +924,6 @@ function endTurn() {
 	if (myTurn) {
 		UI.setMode();
 		UI.msg("100px", "Your turn", 4);
-		console.log('idle...?');
-		// Game should be idle now, waiting for clicks (BUG)
 	}
 	else {
 		UI.setMode('ai');
@@ -950,7 +948,7 @@ b.spawnUnits(0,7);
 // Update:
 UI.drawTools();
 endTurn();
-
+// Render title:
 UI.title('Battle', 'Chess');
 
 // Tools behaviours:
