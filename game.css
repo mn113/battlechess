@@ -198,6 +198,10 @@ i > s {
 	image-rendering: pixelated;
 	pointer-events: none;	/* all clicks handled by parent */
 }
+s > #flag0,
+s > #flag1 {	/* captured flag */
+	transform:  scale(1) translateX(10px);
+}
 i.team0:hover {
 	filter: brightness(1.25)
 			drop-shadow(1px 1px 0 #9f0)
@@ -284,6 +288,7 @@ i.special {
 	font-size: 18px;
 	left: 3px;
 }
+
 
 @keyframes vertbob {
 	50% { padding-bottom: 3px; }

@@ -45,13 +45,12 @@ d.e = d.createElement;
 d.q = d.querySelector;
 d.qa = d.querySelectorAll;
 d.b = d.body;
-d.b.c = d.b.classList;
 var $ga = d.q("#ga");
 var $fx = d.q("#fx");
 var $msg = d.q("#msg");
 var st = setTimeout;
-var C = 'classList';
 var rand = Math.random;
+var C = 'classList';
 
 // Unicode icons:
 //const PIECES = ["🤖","👻","😈","👹","🦄","🐲","🐍","💣","🕸️","🏂"];
@@ -119,7 +118,9 @@ class Unit {
 		this.type = type;
 		this.id = type + guid++;
 		this.team = team;
-		this.facing = (team == 0) ? 'ss' : 'nn';
+		this.enemy = (team) ? 0 : 1;
+		this.hasFlag = false;
+		this.facing = (team) ? 'nn' : 'ss';
 		this.x = x;
 		this.y = y;
 		this.xy = [x,y];
@@ -235,9 +236,13 @@ class Unit {
 			// Kill tree:
 			if (sqr.firstChild && sqr.firstChild.id.startsWith('tree')) sqr.firstChild.remove();
 
-			// What is here?
+			// Check for enemy flag:
+			var ids = [...d.q("#x"+x+"y"+x).children].filter(el => el.id == "flag"+this.enemy);
+			console.log(ids);
+			if (ids.length > 0) this.takeFlag();
+
+			// What units are here?
 			var obsts = b.at(point);
-			//console.log(point, obsts);
 			// Mines go boom:
 			if (obsts.some(o => o.type == 'mine') && this.type != 'qoblin' && this.type != 'fireskull') {
 				var mine = obsts.filter(o => o.type == 'mine')[0];
@@ -313,7 +318,7 @@ class Unit {
 					}
 					else {
 						stepsTaken++;
-						console.log(stepsTaken, 'steps');
+						console.log('step', stepsTaken);
 						this._stepTo(nextCell, step);
 					}
 				}
@@ -332,7 +337,7 @@ class Unit {
 		console.log('_finishMove');
 		b.unHighlight();
 		this.vMoves = this._validMoves();
-		this.face(this.team == 0 ? 'ss' : 'nn');
+		this.face(this.team ? 'nn' : 'ss');
 		if (logIt) this.logMove();
 	}
 
@@ -444,12 +449,13 @@ class Unit {
 
 	// Send unit back to the depot:
 	remove() {
+		if (this.hasFlag) this.dropFlag();
 		d.q('#depot').appendChild(this.el);
 		depots[this.team].push(this);
-		this.hp = this.def;
 		this.x = null;
 		this.y = null;
 		this.xy = null;
+		this.hp = this.def;
 		this.frozen = 5;
 	}
 
@@ -549,6 +555,21 @@ class Unit {
 		this.logMove();
 	}
 
+	// Capture the enemy flag & carry it around:
+	takeFlag() {
+		var flag = (this.team) ? $f0 : $f1;
+		this.inner.appendChild(flag);
+		this.hasFlag = true;
+		sounds.play('spell');
+	}
+
+	// Replace flag in current cell:
+	dropFlag() {
+		var flag = (this.team) ? $f0 : $f1;
+		this.el.parentNode.appendChild(flag);
+		this.hasFlag = false;
+	}
+
 	// Log that this unit moved, so it can't again in this turn:
 	logMove() {
 		myMoves.push(this.id);
@@ -609,6 +630,7 @@ class Board {
 		flag.id = 'flag'+team;
 		flag.innerHTML = "🚩";
 		d.q("#x"+x+"y"+y).appendChild(flag);
+		return flag;
 	}
 
 	// Apply a class to a cell:
@@ -743,10 +765,10 @@ class UI {
 		console.info(`setMode(${mode})`);
 		if (mode == 'spesh' && gameMode == 'spesh') mode = '';	// toggle it off
 		// Clear all classes:
-		while (d.b.c.length > 0) d.b.c.remove(d.b.c[0]);
+		while (d.b[C].length > 0) d.b[C].remove(d.b[C][0]);
 		gameMode = mode || "";
 		// Add the new class:
-		if (mode) d.b.c.add(mode);
+		if (mode) d.b[C].add(mode);
 		d.q("#mode").innerHTML = gameMode;
 		b.unHighlight();
 	}
@@ -841,7 +863,7 @@ class AI {
 	chooseMove(unit) {
 		var moves = unit._validMoves().map(m => {
 			// Distance from move terminus to flag:
-			var heu = b.manhattan(m, unwrap(d.q("#flag0").parentNode.id));		// lower heu more desirable
+			var heu = b.manhattan(m, unwrap($f0.parentNode.id));		// lower heu more desirable
 
 			// Value of occupants:
 			var occupants = b.at(m);
@@ -917,8 +939,8 @@ function endTurn() {
 // Create everything:
 var b = new Board(11);
 // Flags:
-b.putFlag(0,0,0);
-b.putFlag(1,10,10);
+var $f0 = b.putFlag(0,0,0);
+var $f1 = b.putFlag(1,10,10);
 // Team 0's players:
 for (var t of baseSquad) new Unit(t,0);
 // AI's players:
