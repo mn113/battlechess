@@ -103,6 +103,7 @@ var sounds = {
 	jump:	"0,,0.23,,0.2242,0.33,,0.2217,,,,,,0.3816,,,,,1,,,0.0371,,0.5",
 	spell:	"2,0.33,0.55,0.2503,0.2881,0.52,0.28,0.3999,0.1599,,,0.7,0.5334,-0.0897,-0.0773,0.77,-0.0418,0.0381,0.9892,0.1551,-0.2756,0.4,0.146,0.2",
 	spit:	"2,,0.73,0.58,1,0.4,0.0188,-0.5,0.6599,,,,,0.6689,-0.5143,,,,1,,,0.1426,,0.2",
+	flag:	"0,,0.01,0.3832,0.51,0.4314,,,,,,0.493,0.6031,,,,,,1,,,,,0.2",
 
 	play: function(name) {
 		var player = new Audio();
@@ -159,7 +160,11 @@ class Unit {
 			// Ignore mines, allow walk-ons:
 			if (gameMode.startsWith('move') && this.type == 'mine') this.el.parentNode.click();
 			// Disallow moving twice:
-			else if (gameMode == 'move-'+this.id || myMoves.includes(this.id)) this.rotate();
+			else if (myMoves.includes(this.id)) this.rotate();
+			// Trying to melee same cell?
+			else if (gameMode == 'move-'+this.id) {
+				if (b.at(this.xy).length > 1) this.placeAt(this.xy);
+			}
 			// Prepare for specials:
 			else if (gameMode == 'spesh') {
 				if (this.type == 'priest' || this.type == 'golem') {
@@ -510,6 +515,8 @@ class Unit {
 				var zx = (target[0] + 0.5) * 50,
 					zy = (target[1] + 0.5) * 50;
 
+				sounds.play('spit');
+
 				// Then animate 2 simultaneous transforms for top & left:
 				TinyAnimate.animateCSS(
 					rock, 'left', 'px', cx, zx,
@@ -558,7 +565,7 @@ class Unit {
 		var flag = (this.team) ? $f0 : $f1;
 		this.inner.appendChild(flag);
 		this.hasFlag = true;
-		sounds.play('spell');
+		sounds.play('flag');
 	}
 
 	// Replace flag in current cell:
@@ -571,8 +578,10 @@ class Unit {
 	// Log that this unit moved, so it can't again in this turn:
 	logMove() {
 		myMoves.push(this.id);
-		UI.drawTools();
-		UI.setMode();
+		if (myTurn) {
+			UI.drawTools();
+			UI.setMode();
+		}
 		// Third logging is what triggers the switch of play
 		if (myMoves.length == 3 ) endTurn();
 	}
