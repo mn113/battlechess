@@ -20,7 +20,6 @@
 		<li><i class="necro"><s></s></i><data></data></li>
 		<li><i class="iceman"><s></s></i><data></data></li>
 		<a id="moves">3️⃣MOVES</a>
-		<a id="spesh" onclick="UI.setMode('spesh')">💫 SPECIAL</a>
 		<a id="end" onclick="endTurn()">DONE</a>
 	</ul>
 	<p id="info"></p>
@@ -30,30 +29,11 @@
 	</div>
 	<div id="depot"></div>
 	<div id="msg"></div>
-	<div id="title"></div>
-	<p id="credit">Sprites by <a href="https://opengameart.org/users/redshrike">Redshrike</a></p>
+	<p id="credit">Sprites by Redshrike</p>
 
+	<script>
 	<!-- inject:js -->
+	<!-- endinject -->
+	</script>
 	<script src="js/TinyAnimate.min.js"></script>
-	<script src="js/jsfxr.min.js"></script>
-	<script src="js/pixelfont.min.js"></script>
 	<script src="js/game.js"></script>
-    <!-- endinject -->
-</body>
-</html>
-<!--
-TODO
-ai: moves intersecting flag
-sprites: golem & goblin should face se/ne only -> more complex orientation
-utf8 powerups, potions?
-particle canvas?
-timing of mine special (& explosion fx)
-BUG ice jump did not damage same square
-BUG can't click all squares when bunched up -> arrows? zoom?
-BUG ai moves skulls into occupied cells
-BUG ai locked up after icejump
-BUG ai steps on a lot of mines
-BUG not easy to fight own cell when bunched up
-BUG spitballs hit mines
-BUG melees don't stop route
--->

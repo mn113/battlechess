@@ -6,8 +6,7 @@ body {
 	margin: 0;
 	padding: 1em;
 	background-color: #999;
-	background: url(img/bricks.svg),
-	radial-gradient(ellipse at center, #999 0%, #000 80%);
+	background: radial-gradient(ellipse at center, #999 0%, #000 80%);
 }
 #depot {
 	display: none;
@@ -18,6 +17,8 @@ body {
 	text-align: center;
 	z-index: -1;
 	transition: 1s top;
+	font: 3em Georgia;
+	color: yellow;
 }
 #title {
 	position: absolute;
@@ -118,8 +119,6 @@ p canvas {
 #ga {
 	display: grid;
 	background-color: gray;
-	background-image: url(img/bubbles.svg);
-	background-size: 7%;
 	grid-template-columns: repeat(11, 50px);
 	grid-template-rows: repeat(11, 50px);
 	grid-gap: 0;
@@ -184,13 +183,10 @@ i,b {
 	transform-origin: center bottom;
 	transform: rotateZ(-45deg) rotateY(60deg) translateX(50%) translateY(25%) scale(4);
 }
-b, #flag0, #flag1 {
+b {
 	transform: rotateZ(-45deg) rotateY(60deg) scale(5) translateX(13px) translateY(11px);
 	filter: hue-rotate(30deg);
 	pointer-events: none;
-}
-#flag1 {
-	filter: hue-rotate(210deg);
 }
 i > s {
 	display: block;
@@ -200,30 +196,20 @@ i > s {
 	pointer-events: none;	/* all clicks handled by parent */
     text-decoration: none;
 }
-s > #flag0,
-s > #flag1 {	/* captured flags */
-	transform:  scale(1) translateX(10px);
-}
 i.team0:hover {
 	filter: brightness(1.25)
 			drop-shadow(1px 1px 0 #9f0)
-			drop-shadow(-1px 1px 0 #9f0)
-			drop-shadow(1px -1px 0 #9f0)
 			drop-shadow(-1px -1px 0 #9f0);
 }
 i.team1:hover {
 	filter: brightness(1.25)
 			drop-shadow(1px 1px 0 #f09)
-			drop-shadow(-1px 1px 0 #f09)
-			drop-shadow(1px -1px 0 #f09)
 			drop-shadow(-1px -1px 0 #f09);
 }
 .spesh i.team0:hover,
 i.special {
 	filter: brightness(1.25)
 			drop-shadow(1px 1px 0 #fff)
-			drop-shadow(-1px 1px 0 #fff)
-			drop-shadow(1px -1px 0 #fff)
 			drop-shadow(-1px -1px 0 #fff);
 }
 .team1 s {
@@ -283,25 +269,6 @@ i.special {
 .ee s { background-position: 0 100%; }
 .se s {}
 
-.shield s:after {
-	content: "🛡️";
-	position: absolute;
-	font-size: 18px;
-	left: 3px;
-}
-
-
-@keyframes vertbob {
-	50% { padding-bottom: 3px; }
-}
-.jiggle { animation: jiggle 0.33s 3 alternate; }
-@keyframes jiggle {
-	17% { transform: translate(0px,4px); }
-	33% { transform: translate(-3px,4px); filter: invert(); }
-	50% { transform: translate(3px,-4px); }
-	67% { transform: translate(-3px,-4px); filter: invert(); }
-	83% { transform: translate(3px,4px); }
-}
 .flash s { animation: 0.35s 3 flash; }
 @keyframes flash {
 	50% { opacity: 0.2; }
@@ -311,41 +278,9 @@ i.special {
 	0%   { filter: blur(0px); }
 	100% { filter: blur(20px); }
 }
-.jump s { animation: 1.2s 1 jump; transform-origin: bottom; }
-@keyframes jump {
-	0%,  99% { transform: translateY(0) scaleY(1); }
-	15%, 90% { transform: translateY(0) scaleY(0.8); }
-	25%, 80% { transform: translateY(-6px) scaleY(1); }
-	40%, 60% { transform: translateY(-9px); }
-	50%		 { transform: translateY(-11px); }
-}
-.grow s { animation: 0.8s 1 grow; }
-@keyframes grow {
-	100% 	 { transform: scale(2); }
-}
 .invert s { animation: 0.5s 2 invert; }
 @keyframes invert {
 	50% 	 { filter: invert() }
-}
-.ring {
-	position: absolute;
-	display: block;
-	width: 4px;
-	height: 4px;
-	border-radius: 50%;
-	border: 5px dotted;
-	border-color: #03f #36f #69f #9cf;
-	opacity: 0.8;
-	transform-origin: center;
-	transform: scale(1) rotate(0deg);
-	filter: blur(0);
-}
-.expanding { animation: 1s 1 grow3x; }
-@keyframes grow3x {
-	100% 	 { transform: scale(6) rotate(720deg); filter: blur(3px); }
-}
-.spell {
-	filter: invert();
 }
 
 .move { cursor: move; }
@@ -366,49 +301,5 @@ i.special {
 	position: absolute;
 	bottom: 0;
 	right: 0;
-}
-#credit,
-#credit a {
 	color: #ccc;
-}
-
-
-/*******************/
-/* HEALTH OVERLAYS */
-/*******************/
-i figure {
-	position: absolute;
-	top: -35px;
-	left: -50px;
-	width: 40px;	/* needs to contain all text values without wrapping */
-	height: 17px;
-	text-align: center;
-	font-size: 8px;
-	font-family: Arial;
-	white-space: nowrap;
-	color: white;
-	text-shadow: 0 0 1px black, 0 0 1px black, 0 0 1px black, 0 0 1px black;
-}
-i figure:before {	/* health bar container */
-	content: '';
-	position: absolute;
-	bottom: 0;
-	width: 100%;
-	height: 4px;
-	border: 1px solid white;
-	background: black;
-}
-i figure:after { /* health bar contents */
-	content: '';
-	position: absolute;
-	left: 2px;
-	bottom: 2px;
-	height: 2px;
-}
-i figure.p25:after { width: 25%; background: orange; }
-i figure.p50:after { width: 50%; background: yellow; }
-i figure.p75:after { width: 75%; background: lawngreen; }
-i figure.p100:after { width: 95%; background: green; }
-i.team1 figure:after {
-	filter: hue-rotate(180deg);
 }

@@ -10,17 +10,33 @@ var uglifyes = require('uglify-es');
 var composer = require('gulp-uglify/composer');
 var uglify = composer(uglifyes, console);
 var order = require("gulp-order");
+var nologs = require("gulp-remove-logging");
 
 gulp.task('minify-concat-js', function () {
 	// Minify and concat all JavaScripts
 	return gulp.src('./js/*.js')	// put in order
+	.pipe(nologs())
 	.pipe(order([
 		"jsfxr.min.js",
 		"pixelfont.min.js",
 		"TinyAnimate.min.js",
 		"game.js"
 	]))
-	.pipe(uglify())
+	.pipe(uglify({
+		mangle: {
+			toplevel: true,
+			reserved: ["endTurn", "TA"]
+		},
+		compress: {
+			ecma: 6,
+			passes: 2,
+			drop_console: true,
+			pure_getters: true,
+			toplevel: true,
+			unsafe_arrows: true,
+			warnings: true
+		}
+	}))
 	.pipe(concat('all.min.js'))
 	.pipe(gulp.dest('./bundled/'));
 });
