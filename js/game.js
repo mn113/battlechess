@@ -105,7 +105,7 @@ var sounds = {
 	spit:	"2,,0.73,0.58,1,0.4,0.0188,-0.5,0.6599,,,,,0.6689,-0.5143,,,,1,,,0.1426,,0.2",
 	flag:	"0,,0.01,0.3832,0.51,0.4314,,,,,,0.493,0.6031,,,,,,1,,,,,0.2",
 
-	play: function(name) {
+	play: name => {
 		var player = new Audio();
 		player.src = jsfxr(sounds[name].split(",").map(s => parseFloat(s))); // asfxr string must be passed as array
 		player.play();

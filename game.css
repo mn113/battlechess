@@ -31,7 +31,6 @@ body {
 }
 #msg p,
 #title p {
-	xposition: absolute;
 	width: 100vw;
 }
 p canvas {
@@ -99,7 +98,6 @@ p canvas {
 	left: 10px;
 	color: #fff;
 	line-height: 1.4em;
-	xborder: 1px dotted fuchsia;
 }
 #info i {
 	transform: scale(8);
@@ -203,7 +201,7 @@ i > s {
     text-decoration: none;
 }
 s > #flag0,
-s > #flag1 {	/* captured flag */
+s > #flag1 {	/* captured flags */
 	transform:  scale(1) translateX(10px);
 }
 i.team0:hover {
